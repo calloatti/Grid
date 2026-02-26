@@ -1,8 +1,8 @@
 {
   "KeyBindingSpec": {
-    "Id": "Grid.Terrain.Toggle",
+    "Id": "Calloatti.Grid.Terrain.Toggle",
     "GroupId": "UI",
-    "LocKey": "Grid.Terrain.Toggle",
+    "LocKey": "Calloatti.Grid.Terrain.Toggle",
     "Order": 20,
     "AllowOtherModifiers": false,
     "DevModeOnly": false

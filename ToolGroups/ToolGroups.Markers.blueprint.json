@@ -1,0 +1,7 @@
+{
+  "ToolGroupSpec": {
+    "Id": "MarkerToolGroup",
+    "DisplayNameLocKey": "Markers",
+    "Icon": "Sprites/BottomBar/map-marker-cross"
+  }
+}

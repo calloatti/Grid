@@ -8,26 +8,69 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <TimberbornPath>C:\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed</TimberbornPath>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <Reference Include="$(TimberbornPath)\*.dll" Exclude="$(TimberbornPath)\System.*.dll;$(TimberbornPath)\mscorlib.dll;$(TimberbornPath)\netstandard.dll;$(TimberbornPath)\Microsoft.*.dll">
+    <Reference Include="$(TimberbornPath)\Timberborn.*.dll" />
+    <Reference Include="$(TimberbornPath)\Bindito.*.dll" />
+    <Reference Include="$(TimberbornPath)\UnityEngine.*.dll" />
+    <Reference Include="$(TimberbornPath)\Unity.*.dll" />
+
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(TimberbornPath)\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>$(TimberbornPath)\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>$(TimberbornPath)\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>$(TimberbornPath)\System.Memory.dll</HintPath>
+    </Reference>
+
+    <Reference Include="$(TimberbornPath)\AWSSDK.*.dll" />
+    <Reference Include="$(TimberbornPath)\protobuf-net*.dll" />
+    <Reference Include="$(TimberbornPath)\com.rlabrecque.steamworks.net.dll" />
+    <Reference Include="$(TimberbornPath)\Microsoft.Bcl.AsyncInterfaces.dll" />
+    <Reference Include="$(TimberbornPath)\Microsoft.Extensions.ObjectPool.dll" />
+    
+    <Reference Update="@(Reference)">
       <Private>False</Private>
     </Reference>
+
+    <Compile Remove="_metadata\**" />
+    <EmbeddedResource Remove="_metadata\**" />
+    <None Remove="_metadata\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="KeyBindings\UI\Grid.Terrain.Toggle.blueprint.json"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
-    <None Update="Localizations\enUS.csv"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
-    <None Update="manifest.json"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
-    <None Update="Sprites\MeasuringTape.png"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
-    <None Update="Sprites\BottomBar\MeasuringIcon.png"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
-    <None Update="thumbnail.jpg"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
+    <None Update="KeyBindings\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Localizations\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Sprites\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ToolGroups\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="manifest.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="thumbnail.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="powershell -Command &quot;Get-ChildItem '$(TargetDir)' | Remove-Item -Recurse -Force&quot;" /> </Target>
+    <Exec Command="powershell -Command &quot;Get-ChildItem '$(TargetDir)' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force&quot;&#xD;&#xA;powershell -Command &quot;Get-ChildItem -Path '$(USERPROFILE)\Documents\Timberborn\Mods\$(ProjectName)' -Exclude 'workshop_data.json' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force&quot;" /> 
+  </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /Y /S /I &quot;$(TargetDir)*.*&quot; &quot;$(USERPROFILE)\Documents\Timberborn\Mods\$(ProjectName)\&quot;" /> </Target>
+    <Exec Command="powershell -Command &quot;Copy-Item -Path '$(TargetDir)*' -Destination '$(USERPROFILE)\Documents\Timberborn\Mods\$(ProjectName)' -Recurse -Force&quot;" /> 
+  </Target>
+
 
 </Project>

@@ -46,6 +46,11 @@ namespace Calloatti.Grid
       }
 
       GenerateFullTerrainGrid();
+
+      // Somewhere in your code after GenerateFullTerrainGrid() finishes:
+      //var test = new GridMarkerTestRenderer();
+      //test.DrawCenterTestArea(_terrainService);
+
     }
 
     private void LoadSettings()

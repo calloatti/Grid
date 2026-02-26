@@ -1,4 +1,6 @@
 ID,Text,Comment
-Grid.Terrain.Toggle,Toggle Terrain Grid,
-Grid.Paint.Down,Paint in Grid,
-KeyBindingGroup.Grid,Grid,
+Calloatti.Grid.Terrain.Toggle,Toggle Terrain Grid,
+Calloatti.Grid.DeleteAllTitle,Delete all Markers,
+Calloatti.Grid.DeleteAllDescription,Use this tool to delete all Markers placed in the map.,
+Calloatti.Grid.MarkerToolTitle,Add Marker,
+Calloatti.Grid.MarkerToolDescription,Use this tool to add Markers to the map. Shift-Click over a Marker to delete it. Click over a marker to cycle Marker color.,

@@ -26,7 +26,7 @@ namespace Calloatti.Grid
     public bool ProcessInput()
     {
       // 1. Detectar la nueva tecla asignada al Terrain Grid
-      if (_inputService.IsKeyDown("Grid.Terrain.Toggle"))
+      if (_inputService.IsKeyDown("Calloatti.Grid.Terrain.Toggle"))
       {
         Debug.Log($"{GridConfigurator.Prefix} Tecla 'GridTerrain.Toggle' detectada. Disparando Terrain Grid.");
         OnToggleTerrainGrid?.Invoke();
