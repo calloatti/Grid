@@ -1,150 +1,40 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{9FF64392-1408-45F8-B176-362C48D9985C}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Grid</RootNamespace>
-    <AssemblyName>Grid</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>grid</AssemblyName>
+    <RootNamespace>Calloatti.Grid</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Bindito.Core">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Bindito.Core.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-    <Reference Include="Timberborn.BaseComponentSystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.BaseComponentSystem.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.BlockObjectPickingSystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.BlockObjectPickingSystem.dll</HintPath>
-    </Reference>
-    <Reference Include="Timberborn.BlockSystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.BlockSystem.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.ConstructionMode">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.ConstructionMode.dll</HintPath>
-    </Reference>
-    <Reference Include="Timberborn.Coordinates">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.Coordinates.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.CursorToolSystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.CursorToolSystem.dll</HintPath>
-    </Reference>
-    <Reference Include="Timberborn.InputSystem, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.InputSystem.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.KeyBindingSystem, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.KeyBindingSystem.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.LevelVisibilitySystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.LevelVisibilitySystem.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.SelectionSystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.SelectionSystem.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.SingletonSystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.SingletonSystem.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.TerrainSystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.TerrainSystem.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.TerrainSystemRendering">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.TerrainSystemRendering.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.ToolSystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.ToolSystem.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Timberborn.UILayoutSystem">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\Timberborn.UILayoutSystem.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
-      <Private>False</Private>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="GridConfigurator.cs" />
-    <Compile Include="GridInputService.cs" />
-    <Compile Include="GridRenderer.cs" />
-    <Compile Include="GridRenderer.Logic.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="KeyBindings\UI\Grid.Toggle.blueprint.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Update="KeyBindings\UI\*.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Localizations\enUS.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Update="Localizations\*.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="manifest.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Update="manifest.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>xcopy /Y /S /I "$(TargetDir)*.*" "$(USERPROFILE)\Documents\Timberborn\Mods\$(ProjectName)\"</PostBuildEvent>
-  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="MeasuringTape.png" />
+    <Content Include="Sprites\BottomBar\MeasuringIcon.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="thumbnail.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y /S /I &quot;$(TargetDir)*.*&quot; &quot;$(USERPROFILE)\Documents\Timberborn\Mods\$(ProjectName)\&quot;" />
+  </Target>
+
 </Project>
+<ItemGroup>

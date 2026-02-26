@@ -1,2 +1,4 @@
 ID,Text,Comment
-Grid.Toggle,Toggle Grid,
+Grid.Terrain.Toggle,Toggle Terrain Grid,
+Grid.Paint.Down,Paint in Grid,
+KeyBindingGroup.Grid,Grid,

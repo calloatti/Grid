@@ -1,9 +1,9 @@
 {
   "KeyBindingSpec": {
-    "Id": "Grid.Toggle",
+    "Id": "Grid.Terrain.Toggle",
     "GroupId": "UI",
-    "LocKey": "Grid.Toggle",
-    "Order": 95,
+    "LocKey": "Grid.Terrain.Toggle",
+    "Order": 20,
     "AllowOtherModifiers": false,
     "DevModeOnly": false
   },
