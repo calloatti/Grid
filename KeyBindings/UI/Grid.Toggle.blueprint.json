@@ -1,0 +1,15 @@
+{
+  "KeyBindingSpec": {
+    "Id": "Grid.Toggle",
+    "GroupId": "UI",
+    "LocKey": "Grid.Toggle",
+    "Order": 10,
+    "AllowOtherModifiers": false,
+    "DevModeOnly": false
+  },
+  "PrimaryInputBindingSpec": {
+    "Path": "/Keyboard/g",
+    "InputModifiers": "Shift",
+    "Unchangeable": false
+  }
+}

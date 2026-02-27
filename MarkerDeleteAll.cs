@@ -1,22 +1,28 @@
 ﻿using Timberborn.InputSystem;
 using Timberborn.ToolSystem;
 using Timberborn.ToolSystemUI;
-using Timberborn.Localization; // <-- Added Localization namespace
+using Timberborn.Localization;
 
 namespace Calloatti.Grid
 {
-  public class DeleteAllMarkersTool : ITool, IInputProcessor, IToolDescriptor
+  public class MarkerDeleteAll : ITool, IInputProcessor, IToolDescriptor
   {
     private readonly ToolService _toolService;
     private readonly InputService _inputService;
-    private readonly ILoc _loc; // <-- Added ILoc
+    private readonly ILoc _loc;
+    private readonly MarkerService _markerService; // 1. Added the private readonly field
 
-    // Inject ILoc here
-    public DeleteAllMarkersTool(ToolService toolService, InputService inputService, ILoc loc)
+    // 2. Injected MarkerService via constructor
+    public MarkerDeleteAll(
+        ToolService toolService,
+        InputService inputService,
+        ILoc loc,
+        MarkerService markerService)
     {
       _toolService = toolService;
       _inputService = inputService;
       _loc = loc;
+      _markerService = markerService;
     }
 
     public ToolDescription DescribeTool()
@@ -29,7 +35,8 @@ namespace Calloatti.Grid
 
     public void Enter()
     {
-      MarkerService.Instance.RemoveAllMarkers();
+      // 3. Replaced MarkerService.Instance with the injected _markerService
+      _markerService.RemoveAllMarkers();
       _inputService.AddInputProcessor(this);
     }
 

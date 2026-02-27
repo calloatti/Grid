@@ -1,7 +1,7 @@
 {
   "ToolGroupSpec": {
-    "Id": "MarkerToolGroup",
-    "DisplayNameLocKey": "Markers",
+    "Id": "Calloatti.GridToolGroup",
+    "DisplayNameLocKey": "Calloatti.GridToolGroup.Name",
     "Icon": "Sprites/BottomBar/map-marker-cross"
   }
 }

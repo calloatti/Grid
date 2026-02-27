@@ -1,0 +1,15 @@
+﻿{
+  "KeyBindingSpec": {
+    "Id": "Grid.Paint.Down",
+    "GroupId": "UI",
+    "LocKey": "Grid.Paint.Down",
+    "Order": 96,
+    "AllowOtherModifiers": true,
+    "DevModeOnly": false
+  },
+  "PrimaryInputBindingSpec": {
+    "Path": "/Keyboard/g",
+    "InputModifiers": "None",
+    "Unchangeable": false
+  }
+}

@@ -1,25 +1,27 @@
 ﻿using Bindito.Core;
 using Timberborn.KeyBindingSystem;
-using UnityEngine; // Añadido para Debug.Log
+using UnityEngine;
 
 namespace Calloatti.Grid
 {
+  // Binds this configurator to the "Game" context of Timberborn's Dependency Injection framework.
   [Bindito.Core.Context("Game")]
   public class GridConfigurator : Configurator
   {
     public const string Prefix = "[Grid]";
 
-    protected override void Configure() // <--- Se queda protected porque tu Bindito lo exige así.
+    // Protected override required by Bindito to configure dependency injection.
+    protected override void Configure()
     {
-      Debug.Log($"{Prefix} Configurando dependencias del Mod...");
+      Debug.Log($"{Prefix} Initializing mod and binding dependencies...");
 
+      // Bind the input service as a singleton so it can listen to keyboard events continuously.
       Bind<GridInputService>().AsSingleton();
-      Debug.Log($"{Prefix} GridInputService vinculado.");
 
+      // Bind the main renderer logic as a singleton.
       Bind<GridRenderer>().AsSingleton();
-      Debug.Log($"{Prefix} GridRenderer vinculado.");
 
-      Debug.Log($"{Prefix} Configuración completada.");
+      Debug.Log($"{Prefix} Configuration completed successfully.");
     }
   }
 }

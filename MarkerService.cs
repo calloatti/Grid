@@ -16,6 +16,9 @@ namespace Calloatti.Grid
     private readonly ILevelVisibilityService _levelVisibilityService;
     private readonly EventBus _eventBus;
 
+    // Injected to access the ReadConfigFile() method natively
+    private readonly GridRenderer _gridRenderer;
+
     private readonly Dictionary<int, List<GameObject>> _surfaceMarkerSlices = new Dictionary<int, List<GameObject>>();
     private readonly Dictionary<int, List<GameObject>> _sliceMarkerSlices = new Dictionary<int, List<GameObject>>();
     private readonly Dictionary<Vector2Int, int> _columnColors = new Dictionary<Vector2Int, int>();
@@ -27,28 +30,31 @@ namespace Calloatti.Grid
     private const float SliceBaseHeight = 0.85f;
     private const float SurfaceBaseHeight = 1.00f;
 
-    private readonly List<Color> _palette = new List<Color>
-    {
-        new Color(1.00f, 0.55f, 0.00f), new Color(0.00f, 0.45f, 1.00f),
-        new Color(0.10f, 0.90f, 0.10f), new Color(0.95f, 0.10f, 0.50f),
-        new Color(1.00f, 0.95f, 0.00f), new Color(0.00f, 0.95f, 0.95f),
-        new Color(0.60f, 0.20f, 1.00f), new Color(1.00f, 1.00f, 1.00f)
-    };
+    private List<Color> _palette;
 
-    public List<Color> Palette => _palette; // Exposed for the MenuButton
+    // Palette exposed to the Menu UI, populated during PostLoad
+    public List<Color> Palette => _palette;
 
     [Inject]
-    public MarkerService(ITerrainService terrainService, ILevelVisibilityService levelVisibilityService, EventBus eventBus)
+    public MarkerService(
+        ITerrainService terrainService,
+        ILevelVisibilityService levelVisibilityService,
+        EventBus eventBus,
+        GridRenderer gridRenderer)
     {
       _terrainService = terrainService;
       _levelVisibilityService = levelVisibilityService;
       _eventBus = eventBus;
+      _gridRenderer = gridRenderer;
       Instance = this;
     }
 
     public void PostLoad()
     {
       _eventBus.Register(this);
+
+      // Request settings from GridRenderer. If the file doesn't exist, it will be created automatically.
+      _palette = _gridRenderer.ReadConfigFile().MarkerPalette;
     }
 
     [OnEvent]
@@ -57,17 +63,16 @@ namespace Calloatti.Grid
       UpdateVisibility();
     }
 
-    // UPDATED: Now accepts the color index from the specific tool clicked
     public void Interact(Vector3Int columnCoords, int colorIndex)
     {
       Vector2Int col = new Vector2Int(columnCoords.x, columnCoords.y);
       if (_columnColors.ContainsKey(col))
       {
-        ChangeColor(columnCoords); // Cycle if already exists
+        ChangeColor(columnCoords);
       }
       else
       {
-        AddMarker(columnCoords, colorIndex); // Add new with chosen color
+        AddMarker(columnCoords, colorIndex);
       }
     }
 

@@ -1,0 +1,7 @@
+{
+  "KeyBindingGroupSpec": {
+    "Id": "Grid",
+    "Order": 45,
+    "LocKey": "KeyBindingGroup.Grid"
+  }
+}

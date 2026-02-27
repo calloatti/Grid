@@ -1,32 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using Timberborn.Coordinates;
-using Timberborn.PlatformUtilities;
-using Timberborn.TerrainSystem;
 using UnityEngine;
 
 namespace Calloatti.Grid
 {
-  [Serializable]
-  public class GridSettings
-  {
-    public float NormalVerticalOffset = 0.0f;   // Desplazamiento hacia arriba para bloques completos
-    public float SlicedVerticalOffset = 0.0f;   // Desplazamiento hacia arriba para bloques cortados (Slice)
-    public float HorizontalOffsetEW = 0.0f;     // Desplazamiento hacia afuera en el eje Este-Oeste (X)
-    public float HorizontalOffsetNS = 0.0f;     // Desplazamiento hacia afuera en el eje Norte-Sur (Y)
-  }
-
   public partial class GridRenderer
   {
-    // Valores fijos del motor de Timberborn
     private const float SliceBaseHeight = 0.85f;
     private const float SurfaceBaseHeight = 1.00f;
 
+    // Locally cached settings, updated whenever the grid is toggled or generated
     private GridSettings _settings = new GridSettings();
 
     private GameObject _terrainGridRoot;
-
     private GameObject[] _surfaceMeshes;
     private GameObject[] _sliceMeshes;
 
@@ -34,6 +21,8 @@ namespace Calloatti.Grid
     private int _mapSizeX;
     private int _mapSizeY;
     private int _mapMaxZ;
+
+    private HashSet<int> _dirtyLevels = new HashSet<int>();
 
     public void ToggleTerrainGrid()
     {
@@ -45,44 +34,17 @@ namespace Calloatti.Grid
         return;
       }
 
-      GenerateFullTerrainGrid();
-
-      // Somewhere in your code after GenerateFullTerrainGrid() finishes:
-      //var test = new GridMarkerTestRenderer();
-      //test.DrawCenterTestArea(_terrainService);
-
-    }
-
-    private void LoadSettings()
-    {
-      try
+      if (_terrainGridRoot == null)
       {
-        // Ruta oficial segura: Documentos/Timberborn/Mods/Calloatti.Grid/grid.json
-        string modsDir = Path.Combine(UserDataFolder.Folder, "Mods");
-        string modDir = Path.Combine(modsDir, "Grid");
-        string filePath = Path.Combine(modDir, "grid.json");
-
-        if (File.Exists(filePath))
-        {
-          string json = File.ReadAllText(filePath);
-          JsonUtility.FromJsonOverwrite(json, _settings);
-          Debug.Log($"[Grid] Configuración cargada desde: {filePath}");
-        }
-        else
-        {
-          if (!Directory.Exists(modDir))
-          {
-            Directory.CreateDirectory(modDir);
-          }
-          string json = JsonUtility.ToJson(_settings, true);
-          File.WriteAllText(filePath, json);
-          Debug.Log($"[Grid] Archivo grid.json creado con valores por defecto en: {filePath}");
-        }
+        GenerateFullTerrainGrid();
       }
-      catch (Exception e)
+      else
       {
-        Debug.LogError($"[Grid] Error cargando/guardando grid.json: {e.Message}");
-        _settings = new GridSettings(); // Fallback de seguridad
+        // Reload settings so players can tweak the JSON and see changes instantly
+        _settings = ReadConfigFile();
+        _terrainGridRoot.SetActive(true);
+        ProcessDirtyLevels();
+        UpdateVisibleLevels();
       }
     }
 
@@ -149,9 +111,8 @@ namespace Calloatti.Grid
 
       _terrainGridRoot = new GameObject("TerrainGridRoot");
 
-      // Cargamos el JSON cada vez que se genera la grilla
-      LoadSettings();
-
+      // Request data from Main, creating the file if it didn't exist
+      _settings = ReadConfigFile();
       UpdateTerrainCache();
 
       _surfaceMeshes = new GameObject[_mapMaxZ];
@@ -164,6 +125,7 @@ namespace Calloatti.Grid
         BuildLevelMeshes(z);
       }
 
+      _dirtyLevels.Clear();
       UpdateVisibleLevels();
     }
 
@@ -218,7 +180,6 @@ namespace Calloatti.Grid
         i.Add(start); i.Add(start + 1);
       }
 
-      // FASE 1: Líneas Horizontales (Superficies y Paredes)
       for (int x = 0; x < _mapSizeX; x++)
       {
         for (int y = 0; y < _mapSizeY; y++)
@@ -230,7 +191,6 @@ namespace Calloatti.Grid
 
           bool hasAirAbove = !IsSolid(x, y, z + 1);
 
-          // Pared Sur
           if (!IsSolid(x, y - 1, z))
           {
             AddLine(GetOffsetVertex(x, y, z, hBotNormal), GetOffsetVertex(x + 1, y, z, hBotNormal), surfaceVerts, surfaceIndices);
@@ -238,7 +198,6 @@ namespace Calloatti.Grid
             if (!hasAirAbove) AddLine(GetOffsetVertex(x, y, z, hTopNormal), GetOffsetVertex(x + 1, y, z, hTopNormal), surfaceVerts, surfaceIndices);
           }
 
-          // Pared Este
           if (!IsSolid(x + 1, y, z))
           {
             AddLine(GetOffsetVertex(x + 1, y, z, hBotNormal), GetOffsetVertex(x + 1, y + 1, z, hBotNormal), surfaceVerts, surfaceIndices);
@@ -246,7 +205,6 @@ namespace Calloatti.Grid
             if (!hasAirAbove) AddLine(GetOffsetVertex(x + 1, y, z, hTopNormal), GetOffsetVertex(x + 1, y + 1, z, hTopNormal), surfaceVerts, surfaceIndices);
           }
 
-          // Pared Norte
           if (!IsSolid(x, y + 1, z))
           {
             AddLine(GetOffsetVertex(x + 1, y + 1, z, hBotNormal), GetOffsetVertex(x, y + 1, z, hBotNormal), surfaceVerts, surfaceIndices);
@@ -254,7 +212,6 @@ namespace Calloatti.Grid
             if (!hasAirAbove) AddLine(GetOffsetVertex(x + 1, y + 1, z, hTopNormal), GetOffsetVertex(x, y + 1, z, hTopNormal), surfaceVerts, surfaceIndices);
           }
 
-          // Pared Oeste
           if (!IsSolid(x - 1, y, z))
           {
             AddLine(GetOffsetVertex(x, y + 1, z, hBotNormal), GetOffsetVertex(x, y, z, hBotNormal), surfaceVerts, surfaceIndices);
@@ -264,7 +221,6 @@ namespace Calloatti.Grid
         }
       }
 
-      // FASE 2: Líneas Verticales en Esquinas e Intersecciones
       for (int vx = 0; vx <= _mapSizeX; vx++)
       {
         for (int vy = 0; vy <= _mapSizeY; vy++)
@@ -284,10 +240,7 @@ namespace Calloatti.Grid
           Vector3 pBotSliced = GetOffsetVertex(vx, vy, z, hBotSliced);
           Vector3 pTopSliced = GetOffsetVertex(vx, vy, z, sliceHeight);
 
-          // Línea larga (Superficie)
           AddLine(pBotNormal, pTopNormal, surfaceVerts, surfaceIndices);
-
-          // Línea corta (Corte de capa)
           AddLine(pBotSliced, pTopSliced, sliceVerts, sliceIndices);
         }
       }
@@ -340,6 +293,43 @@ namespace Calloatti.Grid
         if (_surfaceMeshes[z] != null) _surfaceMeshes[z].SetActive(z < maxV);
         if (_sliceMeshes[z] != null) _sliceMeshes[z].SetActive(z == maxV);
       }
+    }
+
+    private void OnTerrainHeightChanged(object sender, Timberborn.TerrainSystem.TerrainHeightChangeEventArgs e)
+    {
+      if (_isSolidCache == null) return;
+
+      Timberborn.TerrainSystem.TerrainHeightChange change = e.Change;
+      int x = change.Coordinates.x;
+      int y = change.Coordinates.y;
+
+      for (int z = 0; z < _mapMaxZ; z++)
+      {
+        _isSolidCache[x, y, z] = _terrainService.Underground(new Vector3Int(x, y, z));
+      }
+
+      int minZ = Math.Max(0, change.From - 1);
+      int maxZ = Math.Min(_mapMaxZ - 1, change.To);
+
+      for (int z = minZ; z <= maxZ; z++)
+      {
+        _dirtyLevels.Add(z);
+      }
+    }
+
+    private void ProcessDirtyLevels()
+    {
+      if (_dirtyLevels.Count == 0 || _surfaceMeshes == null) return;
+
+      foreach (int z in _dirtyLevels)
+      {
+        if (_surfaceMeshes[z] != null) UnityEngine.Object.Destroy(_surfaceMeshes[z]);
+        if (_sliceMeshes[z] != null) UnityEngine.Object.Destroy(_sliceMeshes[z]);
+        BuildLevelMeshes(z);
+      }
+
+      _dirtyLevels.Clear();
+      UpdateVisibleLevels();
     }
   }
 }

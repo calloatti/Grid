@@ -72,5 +72,4 @@
     <Exec Command="powershell -Command &quot;Copy-Item -Path '$(TargetDir)*' -Destination '$(USERPROFILE)\Documents\Timberborn\Mods\$(ProjectName)' -Recurse -Force&quot;" /> 
   </Target>
 
-
 </Project>
