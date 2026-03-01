@@ -1,0 +1,7 @@
+{
+  "KeyBindingGroupSpec": {
+    "Id": "Calloatti.Grid.KeyBindingGroup",
+    "Order": 5,
+    "LocKey": "Calloatti.Grid.KeyBindingGroup"
+  }
+}

@@ -31,7 +31,7 @@ namespace Calloatti.Grid
     public bool ProcessInput()
     {
       // 1. Detect the custom keybind assigned to the Terrain Grid toggle.
-      if (_inputService.IsKeyDown("Calloatti.Grid.Terrain.Toggle"))
+      if (_inputService.IsKeyDown("Calloatti.Grid.KeyBind.Toggle.Grid"))
       {
         OnToggleTerrainGrid?.Invoke();
         return false; // Return false to allow other systems to process inputs if needed.

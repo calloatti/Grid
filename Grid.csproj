@@ -44,6 +44,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="KeyBindingGroups\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="KeyBindings\**\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

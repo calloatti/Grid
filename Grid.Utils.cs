@@ -11,7 +11,7 @@ namespace Calloatti.Grid
       if (_terrainGridRoot != null) _terrainGridRoot.SetActive(false);
     }
 
-    private MeshRenderer CreateGridMesh(string name, List<Vector3> vertices, List<int> indices, out GameObject obj)
+    private MeshRenderer CreateGridMesh(string name, List<Vector3> vertices, List<int> indices, Color color, out GameObject obj)
     {
       obj = new GameObject(name);
       MeshFilter mf = obj.AddComponent<MeshFilter>();
@@ -22,7 +22,7 @@ namespace Calloatti.Grid
       mf.mesh = mesh;
 
       Material mat = new Material(Shader.Find("Hidden/Internal-Colored"));
-      mat.color = new Color(0, 0, 0, 0.4f);
+      mat.color = color;
       mat.SetInt("_ZTest", (int)CompareFunction.LessEqual);
       mr.material = mat;
       return mr;

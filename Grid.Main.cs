@@ -8,6 +8,7 @@ using Timberborn.TerrainSystem;
 using Timberborn.LevelVisibilitySystem;
 using Timberborn.PlatformUtilities;
 using Timberborn.Modding;
+using Timberborn.BlockSystem;
 using UnityEngine;
 
 namespace Calloatti.Grid
@@ -20,8 +21,8 @@ namespace Calloatti.Grid
     public float HorizontalOffsetEW = 0.0f;
     public float HorizontalOffsetNS = 0.0f;
 
-    // Changed to strings for user-friendly Hex format in JSON
     public string GridColorHex = "#00000066";
+    public string BuildingGridColorHex = "#00F2F266"; // Semi-transparent Cyan
 
     public List<string> MarkerPaletteHex = new List<string>
     {
@@ -29,14 +30,14 @@ namespace Calloatti.Grid
         "#FFF200", "#00F2F2", "#9933FF", "#FFFFFF"
     };
 
-    // Helper properties to get Unity Colors easily in other files
     [NonSerialized] public Color GridColor;
+    [NonSerialized] public Color BuildingGridColor;
     [NonSerialized] public List<Color> MarkerPalette = new List<Color>();
 
-    // Converts the Hex strings from JSON into usable Unity Colors
     public void InitializeColors()
     {
       GridColor = HexToColor(GridColorHex);
+      BuildingGridColor = HexToColor(BuildingGridColorHex);
       MarkerPalette = MarkerPaletteHex.Select(HexToColor).ToList();
     }
 
@@ -57,7 +58,9 @@ namespace Calloatti.Grid
     private readonly ITerrainService _terrainService;
     private readonly ILevelVisibilityService _levelVisibilityService;
     private readonly ModRepository _modRepository;
+    private readonly IBlockService _blockService;
 
+    // RESTORED: This is the property the compiler was looking for!
     public GridSettings Settings { get; private set; } = new GridSettings();
 
     [Inject]
@@ -66,13 +69,15 @@ namespace Calloatti.Grid
         GridInputService gridInputService,
         ITerrainService terrainService,
         ILevelVisibilityService levelVisibilityService,
-        ModRepository modRepository)
+        ModRepository modRepository,
+        IBlockService blockService)
     {
       _eventBus = eventBus;
       _gridInputService = gridInputService;
       _terrainService = terrainService;
       _levelVisibilityService = levelVisibilityService;
       _modRepository = modRepository;
+      _blockService = blockService;
     }
 
     public void Load()
@@ -135,13 +140,11 @@ namespace Calloatti.Grid
         }
         else
         {
-          // Save default settings if file doesn't exist
           string json = JsonUtility.ToJson(Settings, true);
           File.WriteAllText(filePath, json);
           Debug.Log($"{GridConfigurator.Prefix} Created user-friendly config: {filePath}");
         }
 
-        // Convert the Strings to actual Colors for the mod to use
         Settings.InitializeColors();
       }
       catch (Exception e)
@@ -155,7 +158,6 @@ namespace Calloatti.Grid
       EnsureSettingsLoaded();
     }
 
-    // Centralized access for MarkerService
     public GridSettings ReadConfigFile()
     {
       ReloadSettings();
