@@ -16,7 +16,8 @@ namespace Calloatti.Grid
     private List<int> _loadedYs;
     private List<int> _loadedColors;
 
-    public void Load()
+    // CHANGED: Renamed from Load() so it doesn't conflict with the main file
+    private void LoadState()
     {
       if (_singletonLoader.TryGetSingleton(MarkersKey, out IObjectLoader objectLoader) && objectLoader.Has(XsKey))
       {
@@ -50,7 +51,6 @@ namespace Calloatti.Grid
     {
       _eventBus.Register(this);
       _terrainService.TerrainHeightChanged += OnTerrainHeightChanged;
-      _palette = _gridRenderer.ReadConfigFile().MarkerPalette;
 
       if (_loadedXs != null)
       {

@@ -13,8 +13,7 @@ namespace Calloatti.Grid
     private const float SliceBaseHeight = 0.85f;
     private const float SurfaceBaseHeight = 1.00f;
 
-    private List<Color> _palette;
-    public List<Color> Palette => _palette;
+    // DELETED: Local _palette variables. We use Settings.MarkerPalette now!
 
     private void AddMarker(Vector2Int col, int colorIndex)
     {
@@ -50,7 +49,9 @@ namespace Calloatti.Grid
         if (!targetHeights.Contains(sliceHeight)) targetHeights.Add(sliceHeight);
       }
 
-      Color color = _palette[data.ColorIndex];
+      // FIXED: Pointing to Settings.MarkerPalette
+      Color color = Settings.MarkerPalette[data.ColorIndex];
+
       while (data.VisualPairs.Count < targetHeights.Count)
         data.VisualPairs.Add(CreateMarkerVisualPair(data.Container.transform, color));
 
@@ -74,8 +75,10 @@ namespace Calloatti.Grid
     {
       if (_activeMarkers.TryGetValue(col, out MarkerData data))
       {
-        data.ColorIndex = (data.ColorIndex + 1) % _palette.Count;
-        Color newColor = _palette[data.ColorIndex];
+        // FIXED: Pointing to Settings.MarkerPalette
+        data.ColorIndex = (data.ColorIndex + 1) % Settings.MarkerPalette.Count;
+        Color newColor = Settings.MarkerPalette[data.ColorIndex];
+
         foreach (var pair in data.VisualPairs)
           foreach (MeshRenderer mr in pair.GetComponentsInChildren<MeshRenderer>())
             mr.material.color = newColor;

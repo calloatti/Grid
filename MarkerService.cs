@@ -5,6 +5,7 @@ using Timberborn.Coordinates;
 using Timberborn.LevelVisibilitySystem;
 using Timberborn.SingletonSystem;
 using Timberborn.WorldPersistence;
+using Timberborn.Modding;
 using Bindito.Core;
 using UnityEngine;
 
@@ -18,8 +19,8 @@ namespace Calloatti.Grid
     private readonly IBlockService _blockService;
     private readonly ILevelVisibilityService _levelVisibilityService;
     private readonly EventBus _eventBus;
-    private readonly GridRenderer _gridRenderer;
     private readonly ISingletonLoader _singletonLoader;
+    private readonly ModRepository _modRepository;
 
     private readonly Dictionary<Vector2Int, MarkerData> _activeMarkers = new Dictionary<Vector2Int, MarkerData>();
 
@@ -29,16 +30,22 @@ namespace Calloatti.Grid
         IBlockService blockService,
         ILevelVisibilityService levelVisibilityService,
         EventBus eventBus,
-        GridRenderer gridRenderer,
-        ISingletonLoader singletonLoader)
+        ISingletonLoader singletonLoader,
+        ModRepository modRepository)
     {
       _terrainService = terrainService;
       _blockService = blockService;
       _levelVisibilityService = levelVisibilityService;
       _eventBus = eventBus;
-      _gridRenderer = gridRenderer;
       _singletonLoader = singletonLoader;
+      _modRepository = modRepository;
       Instance = this;
+    }
+
+    public void Load()
+    {
+      EnsureSettingsLoaded(); // Loads the markers.json config
+      LoadState();            // Loads the saved markers from the save file
     }
 
     // =========================================================

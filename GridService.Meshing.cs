@@ -1,32 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using Timberborn.Coordinates;
 using Timberborn.BlockSystem;
 using Timberborn.Buildings;
 using Timberborn.NaturalResources;
 using Timberborn.Ruins;
-using Timberborn.SingletonSystem;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Calloatti.Grid
 {
-  public partial class GridRenderer
+  public partial class GridService
   {
     private const float SliceBaseHeight = 0.85f;
     private const float SurfaceBaseHeight = 1.00f;
 
-    private GridSettings _settings = new GridSettings();
-
     private GameObject _terrainGridRoot;
-
-    // Track the bedrock specifically so we can toggle it with the terrain state
     private GameObject _bedrockMesh;
-
     private GameObject[] _terrainSurfaceMeshes;
     private GameObject[] _terrainSliceMeshes;
-
     private GameObject[] _buildingSurfaceMeshes;
     private GameObject[] _buildingSliceMeshes;
 
@@ -39,33 +31,42 @@ namespace Calloatti.Grid
 
     private HashSet<int> _dirtyLevels = new HashSet<int>();
 
-    // STATE TRACKER: 0 = Off, 1 = Both, 2 = Terrain Only, 3 = Buildings Only
-    private int _gridState = 0;
+    private Material _terrainMaterial;
+    private Material _buildingMaterial;
 
-    public void ToggleTerrainGrid()
+    private void InitializeMaterials()
     {
-      // Cycle the state: 0 -> 1 -> 2 -> 3 -> 0
-      _gridState = (_gridState + 1) % 4;
+      if (_terrainMaterial == null)
+      {
+        _terrainMaterial = new Material(Shader.Find("Hidden/Internal-Colored"));
+        _terrainMaterial.SetInt("_ZTest", (int)CompareFunction.LessEqual);
+      }
+      _terrainMaterial.color = Settings.GridColor;
 
-      // State 0: Everything off
-      if (_gridState == 0)
+      if (_buildingMaterial == null)
       {
-        TurnOffTerrainGrid();
-        return;
+        _buildingMaterial = new Material(Shader.Find("Hidden/Internal-Colored"));
+        _buildingMaterial.SetInt("_ZTest", (int)CompareFunction.LessEqual);
       }
+      _buildingMaterial.color = Settings.BuildingGridColor;
+    }
 
-      // States 1, 2, 3: Ensure root is generated and active
-      if (_terrainGridRoot == null)
-      {
-        GenerateFullTerrainGrid();
-      }
-      else
-      {
-        _settings = ReadConfigFile();
-        _terrainGridRoot.SetActive(true);
-        ProcessDirtyLevels();
-        UpdateVisibleLevels();
-      }
+    private void TurnOffTerrainGrid()
+    {
+      if (_terrainGridRoot != null) _terrainGridRoot.SetActive(false);
+    }
+
+    private MeshRenderer CreateGridMesh(string name, List<Vector3> vertices, List<int> indices, Material mat, out GameObject obj)
+    {
+      obj = new GameObject(name);
+      MeshFilter mf = obj.AddComponent<MeshFilter>();
+      MeshRenderer mr = obj.AddComponent<MeshRenderer>();
+      Mesh mesh = new Mesh { indexFormat = IndexFormat.UInt32 };
+      mesh.SetVertices(vertices);
+      mesh.SetIndices(indices.ToArray(), MeshTopology.Lines, 0);
+      mf.mesh = mesh;
+      mr.material = mat;
+      return mr;
     }
 
     private void UpdateTerrainCache()
@@ -99,7 +100,6 @@ namespace Calloatti.Grid
         if (obj.GetComponent<NaturalResource>() != null) continue;
         if (!obj.PositionedBlocks.HasBlockAt(pos)) continue;
 
-        // Path Filter
         Block runtimeBlock = obj.PositionedBlocks.GetBlock(pos);
         if (runtimeBlock.Occupation == BlockOccupations.Path) continue;
 
@@ -137,12 +137,12 @@ namespace Calloatti.Grid
       int bottom = (q3 ? 1 : 0) + (q4 ? 1 : 0);
 
       float dx = 0f;
-      if (left > right) dx = _settings.HorizontalOffsetEW;
-      else if (right > left) dx = -_settings.HorizontalOffsetEW;
+      if (left > right) dx = Settings.HorizontalOffsetEW;
+      else if (right > left) dx = -Settings.HorizontalOffsetEW;
 
       float dy = 0f;
-      if (bottom > top) dy = _settings.HorizontalOffsetNS;
-      else if (top > bottom) dy = -_settings.HorizontalOffsetNS;
+      if (bottom > top) dy = Settings.HorizontalOffsetNS;
+      else if (top > bottom) dy = -Settings.HorizontalOffsetNS;
 
       return GetWorldPos(vx + dx, vy + dy, height);
     }
@@ -152,7 +152,8 @@ namespace Calloatti.Grid
       if (_terrainGridRoot != null) { UnityEngine.Object.Destroy(_terrainGridRoot); }
       _terrainGridRoot = new GameObject("TerrainGridRoot");
 
-      _settings = ReadConfigFile();
+      EnsureSettingsLoaded();
+      InitializeMaterials();
       UpdateTerrainCache();
 
       _terrainSurfaceMeshes = new GameObject[_mapMaxZ];
@@ -175,7 +176,7 @@ namespace Calloatti.Grid
     {
       List<Vector3> verts = new List<Vector3>();
       List<int> indices = new List<int>();
-      float h = _settings.NormalVerticalOffset;
+      float h = Settings.NormalVerticalOffset;
 
       for (int y = 0; y <= _mapSizeY; y++)
       {
@@ -193,29 +194,28 @@ namespace Calloatti.Grid
         indices.Add(start); indices.Add(start + 1);
       }
 
-      // Output directly to our class variable so we can toggle it dynamically
-      CreateGridMesh("BedrockGrid", verts, indices, _settings.GridColor, out _bedrockMesh);
+      CreateGridMesh("BedrockGrid", verts, indices, _terrainMaterial, out _bedrockMesh);
       _bedrockMesh.transform.SetParent(_terrainGridRoot.transform);
     }
 
     private void BuildLevelMeshes(int z)
     {
-      BuildGridLevelMeshes(z, _isTerrainCache, "Terrain", _settings.GridColor, out _terrainSurfaceMeshes[z], out _terrainSliceMeshes[z]);
-      BuildGridLevelMeshes(z, _isBuildingCache, "Building", _settings.BuildingGridColor, out _buildingSurfaceMeshes[z], out _buildingSliceMeshes[z]);
+      BuildGridLevelMeshes(z, _isTerrainCache, "Terrain", _terrainMaterial, out _terrainSurfaceMeshes[z], out _terrainSliceMeshes[z]);
+      BuildGridLevelMeshes(z, _isBuildingCache, "Building", _buildingMaterial, out _buildingSurfaceMeshes[z], out _buildingSliceMeshes[z]);
     }
 
-    private void BuildGridLevelMeshes(int z, bool[,,] cache, string namePrefix, Color color, out GameObject surfaceMesh, out GameObject sliceMesh)
+    private void BuildGridLevelMeshes(int z, bool[,,] cache, string namePrefix, Material mat, out GameObject surfaceMesh, out GameObject sliceMesh)
     {
       List<Vector3> surfaceVerts = new List<Vector3>();
       List<int> surfaceIndices = new List<int>();
       List<Vector3> sliceVerts = new List<Vector3>();
       List<int> sliceIndices = new List<int>();
 
-      float surfaceHeight = z + SurfaceBaseHeight + _settings.NormalVerticalOffset;
-      float sliceHeight = z + SliceBaseHeight + _settings.SlicedVerticalOffset;
-      float hBotNormal = z + _settings.NormalVerticalOffset;
-      float hBotSliced = z + _settings.SlicedVerticalOffset;
-      float hTopNormal = z + SurfaceBaseHeight + _settings.NormalVerticalOffset;
+      float surfaceHeight = z + SurfaceBaseHeight + Settings.NormalVerticalOffset;
+      float sliceHeight = z + SliceBaseHeight + Settings.SlicedVerticalOffset;
+      float hBotNormal = z + Settings.NormalVerticalOffset;
+      float hBotSliced = z + Settings.SlicedVerticalOffset;
+      float hTopNormal = z + SurfaceBaseHeight + Settings.NormalVerticalOffset;
 
       void AddLine(Vector3 a, Vector3 b, List<Vector3> v, List<int> i)
       {
@@ -295,9 +295,9 @@ namespace Calloatti.Grid
         }
       }
 
-      CreateGridMesh($"{namePrefix}_Surface_Z{z}", surfaceVerts, surfaceIndices, color, out surfaceMesh);
+      CreateGridMesh($"{namePrefix}_Surface_Z{z}", surfaceVerts, surfaceIndices, mat, out surfaceMesh);
       surfaceMesh.transform.SetParent(_terrainGridRoot.transform);
-      CreateGridMesh($"{namePrefix}_Slice_Z{z}", sliceVerts, sliceIndices, color, out sliceMesh);
+      CreateGridMesh($"{namePrefix}_Slice_Z{z}", sliceVerts, sliceIndices, mat, out sliceMesh);
       sliceMesh.transform.SetParent(_terrainGridRoot.transform);
     }
 
@@ -305,7 +305,6 @@ namespace Calloatti.Grid
     {
       if (_terrainGridRoot == null || !_terrainGridRoot.activeSelf) return;
 
-      // Map the current state to visibility booleans
       bool showTerrain = _gridState == 1 || _gridState == 2;
       bool showBuilding = _gridState == 1 || _gridState == 3;
 
@@ -318,55 +317,11 @@ namespace Calloatti.Grid
 
       for (int z = 0; z < _mapMaxZ; z++)
       {
-        // Toggle terrain arrays based on the showTerrain boolean
         if (_terrainSurfaceMeshes[z] != null) _terrainSurfaceMeshes[z].SetActive(showTerrain && z < maxV);
         if (_terrainSliceMeshes[z] != null) _terrainSliceMeshes[z].SetActive(showTerrain && z == maxV);
 
-        // Toggle building arrays based on the showBuilding boolean
         if (_buildingSurfaceMeshes[z] != null) _buildingSurfaceMeshes[z].SetActive(showBuilding && z < maxV);
         if (_buildingSliceMeshes[z] != null) _buildingSliceMeshes[z].SetActive(showBuilding && z == maxV);
-      }
-    }
-
-    private void OnTerrainHeightChanged(object sender, Timberborn.TerrainSystem.TerrainHeightChangeEventArgs e)
-    {
-      if (_isTerrainCache == null) return;
-      Timberborn.TerrainSystem.TerrainHeightChange change = e.Change;
-      int x = change.Coordinates.x;
-      int y = change.Coordinates.y;
-
-      for (int z = 0; z < _mapMaxZ; z++)
-      {
-        _isTerrainCache[x, y, z] = _terrainService.Underground(new Vector3Int(x, y, z));
-      }
-
-      int minZ = Math.Max(0, change.From - 1);
-      int maxZ = Math.Min(_mapMaxZ - 1, change.To);
-
-      for (int z = minZ; z <= maxZ; z++)
-      {
-        _dirtyLevels.Add(z);
-      }
-    }
-
-    [OnEvent]
-    public void OnBlockObjectSet(BlockObjectSetEvent e) { ProcessBlockObjectChange(e.BlockObject); }
-
-    [OnEvent]
-    public void OnBlockObjectUnset(BlockObjectUnsetEvent e) { ProcessBlockObjectChange(e.BlockObject); }
-
-    private void ProcessBlockObjectChange(BlockObject bo)
-    {
-      if (_isBuildingCache == null) return;
-
-      foreach (var coords in bo.PositionedBlocks.GetAllCoordinates())
-      {
-        int x = coords.x; int y = coords.y; int z = coords.z;
-        if (x >= 0 && x < _mapSizeX && y >= 0 && y < _mapSizeY && z >= 0 && z < _mapMaxZ)
-        {
-          _isBuildingCache[x, y, z] = CheckIfBuildingBlock(new Vector3Int(x, y, z));
-          _dirtyLevels.Add(z);
-        }
       }
     }
 
@@ -386,7 +341,6 @@ namespace Calloatti.Grid
       }
 
       _dirtyLevels.Clear();
-      // UpdateVisibleLevels will automatically apply the current 0-3 state to the newly built meshes
       UpdateVisibleLevels();
     }
   }

@@ -2,13 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Bindito.Core;
-using Timberborn.SingletonSystem;
-using Timberborn.TerrainSystem;
-using Timberborn.LevelVisibilitySystem;
 using Timberborn.PlatformUtilities;
-using Timberborn.Modding;
-using Timberborn.BlockSystem;
 using UnityEngine;
 
 namespace Calloatti.Grid
@@ -22,7 +16,7 @@ namespace Calloatti.Grid
     public float HorizontalOffsetNS = 0.0f;
 
     public string GridColorHex = "#00000066";
-    public string BuildingGridColorHex = "#00F2F266"; // Semi-transparent Cyan
+    public string BuildingGridColorHex = "#00F2F266";
 
     public List<string> MarkerPaletteHex = new List<string>
     {
@@ -49,57 +43,9 @@ namespace Calloatti.Grid
     }
   }
 
-  public partial class GridRenderer : ILoadableSingleton, IPostLoadableSingleton, ILateUpdatableSingleton
+  public partial class GridService
   {
-    private const string ModId = "Calloatti.Grid";
-
-    private readonly EventBus _eventBus;
-    private readonly GridInputService _gridInputService;
-    private readonly ITerrainService _terrainService;
-    private readonly ILevelVisibilityService _levelVisibilityService;
-    private readonly ModRepository _modRepository;
-    private readonly IBlockService _blockService;
-
-    // RESTORED: This is the property the compiler was looking for!
     public GridSettings Settings { get; private set; } = new GridSettings();
-
-    [Inject]
-    public GridRenderer(
-        EventBus eventBus,
-        GridInputService gridInputService,
-        ITerrainService terrainService,
-        ILevelVisibilityService levelVisibilityService,
-        ModRepository modRepository,
-        IBlockService blockService)
-    {
-      _eventBus = eventBus;
-      _gridInputService = gridInputService;
-      _terrainService = terrainService;
-      _levelVisibilityService = levelVisibilityService;
-      _modRepository = modRepository;
-      _blockService = blockService;
-    }
-
-    public void Load()
-    {
-      EnsureSettingsLoaded();
-    }
-
-    public void PostLoad()
-    {
-      _eventBus.Register(this);
-      _gridInputService.OnToggleTerrainGrid += ToggleTerrainGrid;
-      _terrainService.TerrainHeightChanged += OnTerrainHeightChanged;
-      Debug.Log($"{GridConfigurator.Prefix} GridRenderer loaded.");
-    }
-
-    public void LateUpdateSingleton()
-    {
-      if (_terrainGridRoot != null && _terrainGridRoot.activeSelf)
-      {
-        ProcessDirtyLevels();
-      }
-    }
 
     private string GetConfigFilePath()
     {
@@ -156,6 +102,7 @@ namespace Calloatti.Grid
     public void ReloadSettings()
     {
       EnsureSettingsLoaded();
+      InitializeMaterials();
     }
 
     public GridSettings ReadConfigFile()
