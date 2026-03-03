@@ -1,0 +1,15 @@
+{
+  "KeyBindingSpec": {
+    "Id": "Calloatti.Grid.KeyBind.Toggle.Topo",
+    "GroupId": "Calloatti.Grid.KeyBindingGroup",
+    "LocKey": "Calloatti.Grid.KeyBind.Toggle.Topo",
+    "Order": 0,
+    "AllowOtherModifiers": false,
+    "DevModeOnly": false
+  },
+  "PrimaryInputBindingSpec": {
+    "Path": "/Keyboard/t",
+    "InputModifiers": "Shift",
+    "Unchangeable": false
+  }
+}

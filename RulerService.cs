@@ -31,16 +31,16 @@ namespace Calloatti.Grid
 
     private readonly List<RulerInstance> _activeRulers = new List<RulerInstance>();
 
-    // --- OVERLAP MANAGER (SPATIAL HASH MAP) ---
     private readonly Dictionary<Vector2Int, List<RulerSegment>> _segmentMap = new Dictionary<Vector2Int, List<RulerSegment>>();
     private readonly Dictionary<Vector2Int, GameObject> _sharedQuads = new Dictionary<Vector2Int, GameObject>();
 
     private bool _isDrawing = false;
     private Vector3Int _startCoords;
+    private int _drawingType = 0;
 
     private const int RULER_LENGTH = 128;
-    private const int GRID_COLUMNS = 16;
-    private const int GRID_ROWS = 32;
+    private const int GRID_COLUMNS = 32;
+    private const int GRID_ROWS = 16;
     private const float HeightOffset = 0.05f;
     private const float SurfaceBaseHeight = 1.00f;
     private const float SliceBaseHeight = 0.85f;
@@ -81,10 +81,9 @@ namespace Calloatti.Grid
         quad.transform.SetParent(container.transform); quad.transform.rotation = rotation;
         quad.GetComponent<MeshRenderer>().material = _rulerMaterial;
 
-        AdjustSegmentUVs(quad, val, (val == 0));
-        UpdateQuadHeight(quad, tile, maxV);
+        var seg = new RulerSegment { Obj = quad, Coords = tile, Value = val, Ruler = instance };
+        UpdateQuadHeight(quad, tile, maxV, instance.RulerType, val);
 
-        var seg = new RulerSegment { Obj = quad, Coords = tile, Value = val };
         instance.Segments.Add(seg);
         RegisterOverlap(tile, seg);
       }
@@ -104,8 +103,7 @@ namespace Calloatti.Grid
         {
           GameObject shared = GameObject.CreatePrimitive(PrimitiveType.Quad); Object.Destroy(shared.GetComponent<Collider>());
           shared.transform.rotation = _lockedRotation; shared.GetComponent<MeshRenderer>().material = _rulerMaterial;
-          AdjustSegmentUVs(shared, 0, false);
-          UpdateQuadHeight(shared, tile, _levelVisibilityService.MaxVisibleLevel);
+          UpdateQuadHeight(shared, tile, _levelVisibilityService.MaxVisibleLevel, 0, 0);
           _sharedQuads[tile] = shared;
         }
         _sharedQuads[tile].SetActive(true);
@@ -137,6 +135,6 @@ namespace Calloatti.Grid
     }
 
     private class RulerInstance { public GameObject Container; public List<RulerSegment> Segments; public Vector3Int Start, End; public Quaternion Rotation; public int RulerType; public int Period; public int GapSize; }
-    private class RulerSegment { public GameObject Obj; public Vector2Int Coords; public int Value; }
+    private class RulerSegment { public GameObject Obj; public Vector2Int Coords; public int Value; public RulerInstance Ruler; }
   }
 }

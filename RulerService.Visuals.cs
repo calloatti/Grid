@@ -9,8 +9,8 @@ namespace Calloatti.Grid
     private void UpdateRulersVisuals()
     {
       int maxV = _levelVisibilityService.MaxVisibleLevel;
-      foreach (var r in _activeRulers) { foreach (var s in r.Segments) UpdateQuadHeight(s.Obj, s.Coords, maxV); }
-      foreach (var pair in _sharedQuads) UpdateQuadHeight(pair.Value, pair.Key, maxV);
+      foreach (var r in _activeRulers) { foreach (var s in r.Segments) UpdateQuadHeight(s.Obj, s.Coords, maxV, r.RulerType, s.Value); }
+      foreach (var pair in _sharedQuads) UpdateQuadHeight(pair.Value, pair.Key, maxV, 0, 0);
     }
 
     private void InternalSetupPreview()
@@ -38,7 +38,8 @@ namespace Calloatti.Grid
       {
         GameObject q = _previewQuads[i]; Vector2Int tile = new Vector2Int(start.x + (step.x * i), start.y + (step.y * i));
         if (!_terrainService.Contains(tile)) { q.SetActive(false); continue; }
-        q.SetActive(true); AdjustSegmentUVs(q, i + 1, false); UpdateQuadHeight(q, tile, maxV);
+        q.SetActive(true);
+        UpdateQuadHeight(q, tile, maxV, _drawingType, i + 1);
       }
     }
 
@@ -54,13 +55,13 @@ namespace Calloatti.Grid
       return Quaternion.Euler(90, snapped, 0);
     }
 
-    private void UpdateQuadHeight(GameObject q, Vector2Int c, int maxV)
+    private void UpdateQuadHeight(GameObject q, Vector2Int c, int maxV, int rulerType, int logicalValue)
     {
-      int mapZ = _terrainService.Size.z; float fY = -1f;
-      if (maxV >= 0 && maxV < mapZ && _terrainService.Underground(new Vector3Int(c.x, c.y, maxV))) fY = maxV + SliceBaseHeight + HeightOffset;
+      int mapZ = _terrainService.Size.z; float fY = -1f; int finalZ = -1;
+
+      if (maxV >= 0 && maxV < mapZ && _terrainService.Underground(new Vector3Int(c.x, c.y, maxV))) { fY = maxV + SliceBaseHeight + HeightOffset; finalZ = maxV; }
       if (fY < 0f)
       {
-        // Core Height Logic (Terrain + Blocks)
         int hZ = -2;
         for (int z = 0; z < mapZ; z++)
         {
@@ -70,21 +71,28 @@ namespace Calloatti.Grid
             if (maxV >= z + 1) hZ = z;
           }
         }
-        if (hZ != -2) fY = hZ + SurfaceBaseHeight + HeightOffset;
+        if (hZ != -2) { fY = hZ + SurfaceBaseHeight + HeightOffset; finalZ = hZ; }
       }
       if (fY < 0f)
       {
         int tZ = _terrainService.GetTerrainHeightBelow(new Vector3Int(c.x, c.y, mapZ - 1)) - 1;
         fY = (tZ < maxV) ? (tZ + SurfaceBaseHeight + HeightOffset) : (maxV + SliceBaseHeight + HeightOffset);
+        finalZ = (tZ < maxV) ? tZ : maxV;
       }
+
       Vector3 wP = CoordinateSystem.GridToWorld(new Vector3(c.x + 0.5f, c.y + 0.5f, 0));
       q.transform.position = new Vector3(wP.x, fY, wP.z);
+
+      AdjustSegmentUVs(q, logicalValue);
     }
 
-    private void AdjustSegmentUVs(GameObject go, int logicalValue, bool isPeriodicZero)
+    private void AdjustSegmentUVs(GameObject go, int logicalValue)
     {
       Mesh mesh = go.GetComponent<MeshFilter>().mesh; Vector2[] uvs = new Vector2[4];
-      int spriteIndex = (logicalValue == 0 && isPeriodicZero) ? 511 : logicalValue;
+
+      int spriteIndex = logicalValue;
+
+
       int col = spriteIndex % GRID_COLUMNS; int row = spriteIndex / GRID_COLUMNS;
       float uStart = (float)col / GRID_COLUMNS; float uEnd = (float)(col + 1) / GRID_COLUMNS;
       float vTop = 1.0f - ((float)row / GRID_ROWS); float vBottom = 1.0f - ((float)(row + 1) / GRID_ROWS);

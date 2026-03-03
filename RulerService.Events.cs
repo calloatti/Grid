@@ -27,8 +27,8 @@ namespace Calloatti.Grid
       int maxV = _levelVisibilityService.MaxVisibleLevel;
       foreach (var col in affected)
       {
-        if (_sharedQuads.ContainsKey(col)) UpdateQuadHeight(_sharedQuads[col], col, maxV);
-        foreach (var seg in _segmentMap[col]) UpdateQuadHeight(seg.Obj, col, maxV);
+        if (_sharedQuads.ContainsKey(col)) UpdateQuadHeight(_sharedQuads[col], col, maxV, 0, 0);
+        foreach (var seg in _segmentMap[col]) UpdateQuadHeight(seg.Obj, col, maxV, seg.Ruler.RulerType, seg.Value);
       }
     }
 
@@ -37,8 +37,8 @@ namespace Calloatti.Grid
       Vector2Int col = new Vector2Int(e.Change.Coordinates.x, e.Change.Coordinates.y);
       if (!_segmentMap.ContainsKey(col) || _segmentMap[col].Count == 0) return;
       int maxV = _levelVisibilityService.MaxVisibleLevel;
-      if (_sharedQuads.ContainsKey(col)) UpdateQuadHeight(_sharedQuads[col], col, maxV);
-      foreach (var seg in _segmentMap[col]) UpdateQuadHeight(seg.Obj, col, maxV);
+      if (_sharedQuads.ContainsKey(col)) UpdateQuadHeight(_sharedQuads[col], col, maxV, 0, 0);
+      foreach (var seg in _segmentMap[col]) UpdateQuadHeight(seg.Obj, col, maxV, seg.Ruler.RulerType, seg.Value);
     }
   }
 }
