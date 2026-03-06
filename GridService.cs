@@ -5,10 +5,11 @@ using Timberborn.LevelVisibilitySystem;
 using Timberborn.Modding;
 using Timberborn.BlockSystem;
 using UnityEngine;
+using System;
 
 namespace Calloatti.Grid
 {
-  public partial class GridService : ILoadableSingleton, IPostLoadableSingleton, ILateUpdatableSingleton
+  public partial class GridService : ILoadableSingleton, IPostLoadableSingleton, ILateUpdatableSingleton, IDisposable
   {
     private const string ModId = "Calloatti.Grid";
 
@@ -57,6 +58,11 @@ namespace Calloatti.Grid
       {
         ProcessDirtyLevels();
       }
+    }
+
+    public void Dispose()
+    {
+      OnDispose();
     }
   }
 }

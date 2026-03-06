@@ -6,7 +6,6 @@ using Timberborn.ToolSystem;
 using Timberborn.ToolSystemUI;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static UnityEngine.GridBrushBase;
 
 namespace Calloatti.Grid
 {
@@ -17,7 +16,7 @@ namespace Calloatti.Grid
     private readonly IAssetLoader _assetLoader;
     private readonly MarkerService _markerService;
     private readonly ILoc _loc;
-    private readonly int _colorIndex; //
+    private readonly int _colorIndex;
 
     private Texture2D _cursor;
 
@@ -27,7 +26,7 @@ namespace Calloatti.Grid
         IAssetLoader assetLoader,
         MarkerService markerService,
         ILoc loc,
-        int colorIndex) // Received from the loop
+        int colorIndex)
     {
       _inputService = inputService;
       _cursorCoordinatesPicker = cursorCoordinatesPicker;
@@ -47,8 +46,6 @@ namespace Calloatti.Grid
     public void Enter()
     {
       _inputService.AddInputProcessor(this);
-
-      // Pivot the cursor at the bottom center of the image
       Vector2 hotspot = new Vector2(_cursor.width / 2f, _cursor.height);
       Cursor.SetCursor(_cursor, hotspot, CursorMode.Auto);
     }
@@ -74,7 +71,6 @@ namespace Calloatti.Grid
           }
           else
           {
-            // Place the marker with the tool's assigned color index
             _markerService.Interact(picker.Value.TileCoordinates, _colorIndex);
           }
           return true;

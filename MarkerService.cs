@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Timberborn.TerrainSystem;
 using Timberborn.BlockSystem;
 using Timberborn.Coordinates;
@@ -6,12 +7,13 @@ using Timberborn.LevelVisibilitySystem;
 using Timberborn.SingletonSystem;
 using Timberborn.WorldPersistence;
 using Timberborn.Modding;
+using Timberborn.QuickNotificationSystem;
 using Bindito.Core;
 using UnityEngine;
 
 namespace Calloatti.Grid
 {
-  public partial class MarkerService : ILoadableSingleton, IPostLoadableSingleton, ISaveableSingleton
+  public partial class MarkerService : ILoadableSingleton, IPostLoadableSingleton, ISaveableSingleton, IDisposable
   {
     public static MarkerService Instance { get; private set; }
 
@@ -21,6 +23,7 @@ namespace Calloatti.Grid
     private readonly EventBus _eventBus;
     private readonly ISingletonLoader _singletonLoader;
     private readonly ModRepository _modRepository;
+    private readonly QuickNotificationService _notificationService;
 
     private readonly Dictionary<Vector2Int, MarkerData> _activeMarkers = new Dictionary<Vector2Int, MarkerData>();
 
@@ -31,7 +34,8 @@ namespace Calloatti.Grid
         ILevelVisibilityService levelVisibilityService,
         EventBus eventBus,
         ISingletonLoader singletonLoader,
-        ModRepository modRepository)
+        ModRepository modRepository,
+        QuickNotificationService notificationService)
     {
       _terrainService = terrainService;
       _blockService = blockService;
@@ -39,18 +43,15 @@ namespace Calloatti.Grid
       _eventBus = eventBus;
       _singletonLoader = singletonLoader;
       _modRepository = modRepository;
+      _notificationService = notificationService;
       Instance = this;
     }
 
     public void Load()
     {
-      EnsureSettingsLoaded(); // Loads the markers.json config
-      LoadState();            // Loads the saved markers from the save file
+      EnsureSettingsLoaded();
+      LoadState();
     }
-
-    // =========================================================
-    // COMANDOS PÚBLICOS
-    // =========================================================
 
     public void Interact(Vector3Int columnCoords, int colorIndex)
     {
@@ -65,9 +66,10 @@ namespace Calloatti.Grid
       if (_activeMarkers.ContainsKey(col)) RemoveColumn(col);
     }
 
-    // =========================================================
-    // EVENT LISTENERS
-    // =========================================================
+    public void Dispose()
+    {
+      OnDispose();
+    }
 
     [OnEvent]
     public void OnMaxVisibleLevelChanged(MaxVisibleLevelChangedEvent maxVisibleLevelChangedEvent)
@@ -107,10 +109,6 @@ namespace Calloatti.Grid
     {
       CheckBlockChange(new Vector2Int(e.Change.Coordinates.x, e.Change.Coordinates.y));
     }
-
-    // =========================================================
-    // DATA STRUCTURES
-    // =========================================================
 
     private struct SurfaceData
     {

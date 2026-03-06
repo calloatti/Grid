@@ -149,7 +149,15 @@ namespace Calloatti.Grid
 
     public void GenerateFullTerrainGrid()
     {
-      if (_terrainGridRoot != null) { UnityEngine.Object.Destroy(_terrainGridRoot); }
+      if (_terrainGridRoot != null)
+      {
+        MeshFilter[] filters = _terrainGridRoot.GetComponentsInChildren<MeshFilter>(true);
+        foreach (MeshFilter mf in filters)
+        {
+          if (mf.sharedMesh != null) UnityEngine.Object.Destroy(mf.sharedMesh);
+        }
+        UnityEngine.Object.Destroy(_terrainGridRoot);
+      }
       _terrainGridRoot = new GameObject("TerrainGridRoot");
 
       EnsureSettingsLoaded();
@@ -178,20 +186,40 @@ namespace Calloatti.Grid
       List<int> indices = new List<int>();
       float h = Settings.NormalVerticalOffset;
 
+      // Draw horizontal segments (along X axis) only if adjacent bedrock is exposed
       for (int y = 0; y <= _mapSizeY; y++)
       {
-        int start = verts.Count;
-        verts.Add(GetWorldPos(0, y, h));
-        verts.Add(GetWorldPos(_mapSizeX, y, h));
-        indices.Add(start); indices.Add(start + 1);
+        for (int x = 0; x < _mapSizeX; x++)
+        {
+          bool exposedCurrent = (y < _mapSizeY) && !IsSolid(x, y, 0, _isTerrainCache);
+          bool exposedBelow = (y > 0) && !IsSolid(x, y - 1, 0, _isTerrainCache);
+
+          if (exposedCurrent || exposedBelow)
+          {
+            int start = verts.Count;
+            verts.Add(GetWorldPos(x, y, h));
+            verts.Add(GetWorldPos(x + 1, y, h));
+            indices.Add(start); indices.Add(start + 1);
+          }
+        }
       }
 
+      // Draw vertical segments (along Y axis) only if adjacent bedrock is exposed
       for (int x = 0; x <= _mapSizeX; x++)
       {
-        int start = verts.Count;
-        verts.Add(GetWorldPos(x, 0, h));
-        verts.Add(GetWorldPos(x, _mapSizeY, h));
-        indices.Add(start); indices.Add(start + 1);
+        for (int y = 0; y < _mapSizeY; y++)
+        {
+          bool exposedCurrent = (x < _mapSizeX) && !IsSolid(x, y, 0, _isTerrainCache);
+          bool exposedLeft = (x > 0) && !IsSolid(x - 1, y, 0, _isTerrainCache);
+
+          if (exposedCurrent || exposedLeft)
+          {
+            int start = verts.Count;
+            verts.Add(GetWorldPos(x, y, h));
+            verts.Add(GetWorldPos(x, y + 1, h));
+            indices.Add(start); indices.Add(start + 1);
+          }
+        }
       }
 
       CreateGridMesh("BedrockGrid", verts, indices, _terrainMaterial, out _bedrockMesh);
@@ -329,19 +357,57 @@ namespace Calloatti.Grid
     {
       if (_dirtyLevels.Count == 0 || _terrainSurfaceMeshes == null) return;
 
+      // NEW: Check if bedrock level (Z=0) was modified
+      bool rebuildBedrock = _dirtyLevels.Contains(0);
+
       foreach (int z in _dirtyLevels)
       {
-        if (_terrainSurfaceMeshes[z] != null) UnityEngine.Object.Destroy(_terrainSurfaceMeshes[z]);
-        if (_terrainSliceMeshes[z] != null) UnityEngine.Object.Destroy(_terrainSliceMeshes[z]);
-
-        if (_buildingSurfaceMeshes[z] != null) UnityEngine.Object.Destroy(_buildingSurfaceMeshes[z]);
-        if (_buildingSliceMeshes[z] != null) UnityEngine.Object.Destroy(_buildingSliceMeshes[z]);
+        DestroyMeshObject(ref _terrainSurfaceMeshes[z]);
+        DestroyMeshObject(ref _terrainSliceMeshes[z]);
+        DestroyMeshObject(ref _buildingSurfaceMeshes[z]);
+        DestroyMeshObject(ref _buildingSliceMeshes[z]);
 
         BuildLevelMeshes(z);
       }
 
+      // NEW: Rebuild bedrock if necessary
+      if (rebuildBedrock)
+      {
+        DestroyMeshObject(ref _bedrockMesh);
+        BuildBedrockMesh();
+      }
+
       _dirtyLevels.Clear();
       UpdateVisibleLevels();
+    }
+    private void DestroyMeshObject(ref GameObject obj)
+    {
+      if (obj != null)
+      {
+        MeshFilter mf = obj.GetComponent<MeshFilter>();
+        if (mf != null && mf.sharedMesh != null)
+        {
+          UnityEngine.Object.Destroy(mf.sharedMesh);
+        }
+        UnityEngine.Object.Destroy(obj);
+        obj = null;
+      }
+    }
+
+    private void OnDispose()
+    {
+      if (_terrainGridRoot != null)
+      {
+        MeshFilter[] filters = _terrainGridRoot.GetComponentsInChildren<MeshFilter>(true);
+        foreach (MeshFilter mf in filters)
+        {
+          if (mf.sharedMesh != null) UnityEngine.Object.Destroy(mf.sharedMesh);
+        }
+        UnityEngine.Object.Destroy(_terrainGridRoot);
+      }
+
+      if (_terrainMaterial != null) UnityEngine.Object.Destroy(_terrainMaterial);
+      if (_buildingMaterial != null) UnityEngine.Object.Destroy(_buildingMaterial);
     }
   }
 }

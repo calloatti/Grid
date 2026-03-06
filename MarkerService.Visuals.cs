@@ -6,18 +6,32 @@ namespace Calloatti.Grid
 {
   public partial class MarkerService
   {
-    private Material _markerMaterial;
+    private Material[] _paletteMaterials;
+    private Mesh _sharedCrossMesh;
+    private bool _markersVisible = true;
+
     private const float Thickness = 0.12f;
     private const float DiagonalLength = 0.65f;
     private const float HeightOffset = 0.05f;
     private const float SliceBaseHeight = 0.85f;
     private const float SurfaceBaseHeight = 1.00f;
 
-    // DELETED: Local _palette variables. We use Settings.MarkerPalette now!
+    public void ToggleMarkers()
+    {
+      _markersVisible = !_markersVisible;
+
+      foreach (var data in _activeMarkers.Values)
+      {
+        if (data.Container != null) data.Container.SetActive(_markersVisible);
+      }
+
+      string status = _markersVisible ? "ON" : "OFF";
+      _notificationService.SendNotification($"Markers: {status}");
+    }
 
     private void AddMarker(Vector2Int col, int colorIndex)
     {
-      InitializeMaterial();
+      InitializeResources();
       MarkerData data = new MarkerData
       {
         Container = new GameObject($"Marker_{col.x}_{col.y}"),
@@ -26,14 +40,16 @@ namespace Calloatti.Grid
         Surfaces = new List<SurfaceData>()
       };
 
+      data.Container.SetActive(_markersVisible);
       _activeMarkers[col] = data;
       RecalculateColumnCache(col);
       UpdateMarkerVisuals(col);
     }
 
-    private void UpdateMarkerVisuals(Vector2Int col)
+    public void UpdateMarkerVisuals(Vector2Int col)
     {
       if (!_activeMarkers.TryGetValue(col, out MarkerData data)) return;
+      if (!_markersVisible) return;
 
       int maxV = _levelVisibilityService.MaxVisibleLevel;
       List<float> targetHeights = new List<float>();
@@ -49,11 +65,10 @@ namespace Calloatti.Grid
         if (!targetHeights.Contains(sliceHeight)) targetHeights.Add(sliceHeight);
       }
 
-      // FIXED: Pointing to Settings.MarkerPalette
-      Color color = Settings.MarkerPalette[data.ColorIndex];
+      Material sharedMat = _paletteMaterials[data.ColorIndex];
 
       while (data.VisualPairs.Count < targetHeights.Count)
-        data.VisualPairs.Add(CreateMarkerVisualPair(data.Container.transform, color));
+        data.VisualPairs.Add(CreateMarkerVisualObject(data.Container.transform, sharedMat));
 
       Vector3 worldPos = CoordinateSystem.GridToWorld(new Vector3(col.x + 0.5f, col.y + 0.5f, 0));
 
@@ -75,13 +90,14 @@ namespace Calloatti.Grid
     {
       if (_activeMarkers.TryGetValue(col, out MarkerData data))
       {
-        // FIXED: Pointing to Settings.MarkerPalette
         data.ColorIndex = (data.ColorIndex + 1) % Settings.MarkerPalette.Count;
-        Color newColor = Settings.MarkerPalette[data.ColorIndex];
+        Material newSharedMat = _paletteMaterials[data.ColorIndex];
 
-        foreach (var pair in data.VisualPairs)
-          foreach (MeshRenderer mr in pair.GetComponentsInChildren<MeshRenderer>())
-            mr.material.color = newColor;
+        foreach (var obj in data.VisualPairs)
+        {
+          MeshRenderer mr = obj.GetComponent<MeshRenderer>();
+          if (mr != null) mr.sharedMaterial = newSharedMat;
+        }
       }
     }
 
@@ -89,7 +105,7 @@ namespace Calloatti.Grid
     {
       if (_activeMarkers.TryGetValue(col, out MarkerData data))
       {
-        Object.Destroy(data.Container);
+        UnityEngine.Object.Destroy(data.Container);
         _activeMarkers.Remove(col);
       }
     }
@@ -97,34 +113,70 @@ namespace Calloatti.Grid
     public void RemoveAllMarkers()
     {
       foreach (var data in _activeMarkers.Values)
-        if (data.Container != null) Object.Destroy(data.Container);
+        if (data.Container != null) UnityEngine.Object.Destroy(data.Container);
       _activeMarkers.Clear();
     }
 
-    private GameObject CreateMarkerVisualPair(Transform parent, Color color)
+    private GameObject CreateMarkerVisualObject(Transform parent, Material sharedMat)
     {
-      GameObject pair = new GameObject("MarkerPair");
-      pair.transform.SetParent(parent, false);
-      CreateQuad(45f, color).transform.SetParent(pair.transform, false);
-      CreateQuad(-45f, color).transform.SetParent(pair.transform, false);
-      return pair;
+      GameObject obj = new GameObject("MarkerVisual");
+      obj.transform.SetParent(parent, false);
+      MeshFilter mf = obj.AddComponent<MeshFilter>();
+      MeshRenderer mr = obj.AddComponent<MeshRenderer>();
+      mf.sharedMesh = _sharedCrossMesh;
+      mr.sharedMaterial = sharedMat;
+      return obj;
     }
 
-    private GameObject CreateQuad(float rotY, Color color)
+    private void InitializeResources()
     {
-      GameObject q = GameObject.CreatePrimitive(PrimitiveType.Quad);
-      Object.Destroy(q.GetComponent<Collider>());
-      MeshRenderer mr = q.GetComponent<MeshRenderer>();
-      mr.material = new Material(_markerMaterial);
-      mr.material.color = color;
-      q.transform.localScale = new Vector3(Thickness, DiagonalLength, 1f);
-      q.transform.localRotation = Quaternion.Euler(90, rotY, 0);
-      return q;
+      if (_sharedCrossMesh == null) _sharedCrossMesh = CreateCrossMesh();
+      if (_paletteMaterials == null)
+      {
+        _paletteMaterials = new Material[Settings.MarkerPalette.Count];
+        Shader spriteShader = Shader.Find("Sprites/Default");
+        for (int i = 0; i < Settings.MarkerPalette.Count; i++)
+        {
+          _paletteMaterials[i] = new Material(spriteShader) { color = Settings.MarkerPalette[i] };
+        }
+      }
     }
 
-    private void InitializeMaterial()
+    private Mesh CreateCrossMesh()
     {
-      if (_markerMaterial == null) _markerMaterial = new Material(Shader.Find("Sprites/Default"));
+      Mesh mesh = new Mesh();
+      float halfW = Thickness / 2f;
+      float halfH = DiagonalLength / 2f;
+      Vector3[] vertices = new Vector3[8];
+
+      Quaternion q1 = Quaternion.Euler(90, 45, 0);
+      vertices[0] = q1 * new Vector3(-halfW, -halfH, 0);
+      vertices[1] = q1 * new Vector3(halfW, -halfH, 0);
+      vertices[2] = q1 * new Vector3(-halfW, halfH, 0);
+      vertices[3] = q1 * new Vector3(halfW, halfH, 0);
+
+      Quaternion q2 = Quaternion.Euler(90, -45, 0);
+      vertices[4] = q2 * new Vector3(-halfW, -halfH, 0);
+      vertices[5] = q2 * new Vector3(halfW, -halfH, 0);
+      vertices[6] = q2 * new Vector3(-halfW, halfH, 0);
+      vertices[7] = q2 * new Vector3(halfW, halfH, 0);
+
+      mesh.vertices = vertices;
+      mesh.triangles = new int[12] { 0, 2, 1, 1, 2, 3, 4, 6, 5, 5, 6, 7 };
+      mesh.RecalculateNormals();
+      return mesh;
+    }
+
+    private void OnDispose()
+    {
+      _terrainService.TerrainHeightChanged -= OnTerrainHeightChanged;
+      RemoveAllMarkers();
+
+      if (_paletteMaterials != null)
+      {
+        foreach (var mat in _paletteMaterials) if (mat != null) UnityEngine.Object.Destroy(mat);
+      }
+      if (_sharedCrossMesh != null) UnityEngine.Object.Destroy(_sharedCrossMesh);
     }
   }
 }

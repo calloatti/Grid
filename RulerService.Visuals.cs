@@ -21,8 +21,7 @@ namespace Calloatti.Grid
         _previewQuads = new GameObject[RULER_LENGTH];
         for (int i = 0; i < RULER_LENGTH; i++)
         {
-          GameObject q = GameObject.CreatePrimitive(PrimitiveType.Quad); Object.Destroy(q.GetComponent<Collider>());
-          q.transform.SetParent(_previewContainer.transform); q.GetComponent<MeshRenderer>().material = _rulerMaterial;
+          GameObject q = CreateRulerQuad(_previewContainer.transform, _lockedRotation);
           q.SetActive(false); _previewQuads[i] = q;
         }
       }
@@ -57,12 +56,17 @@ namespace Calloatti.Grid
 
     private void UpdateQuadHeight(GameObject q, Vector2Int c, int maxV, int rulerType, int logicalValue)
     {
-      int mapZ = _terrainService.Size.z; float fY = -1f; int finalZ = -1;
+      int mapZ = _terrainService.Size.z; float fY = -1f;
 
-      if (maxV >= 0 && maxV < mapZ && _terrainService.Underground(new Vector3Int(c.x, c.y, maxV))) { fY = maxV + SliceBaseHeight + HeightOffset; finalZ = maxV; }
+      if (maxV >= 0 && maxV < mapZ && _terrainService.Underground(new Vector3Int(c.x, c.y, maxV)))
+      {
+        fY = maxV + SliceBaseHeight + HeightOffset;
+      }
+
       if (fY < 0f)
       {
         int hZ = -2;
+        // Restored: Original bottom-up scan (0 to mapZ)
         for (int z = 0; z < mapZ; z++)
         {
           Vector3Int p = new Vector3Int(c.x, c.y, z);
@@ -71,29 +75,25 @@ namespace Calloatti.Grid
             if (maxV >= z + 1) hZ = z;
           }
         }
-        if (hZ != -2) { fY = hZ + SurfaceBaseHeight + HeightOffset; finalZ = hZ; }
+        if (hZ != -2) { fY = hZ + SurfaceBaseHeight + HeightOffset; }
       }
+
       if (fY < 0f)
       {
         int tZ = _terrainService.GetTerrainHeightBelow(new Vector3Int(c.x, c.y, mapZ - 1)) - 1;
         fY = (tZ < maxV) ? (tZ + SurfaceBaseHeight + HeightOffset) : (maxV + SliceBaseHeight + HeightOffset);
-        finalZ = (tZ < maxV) ? tZ : maxV;
       }
 
       Vector3 wP = CoordinateSystem.GridToWorld(new Vector3(c.x + 0.5f, c.y + 0.5f, 0));
       q.transform.position = new Vector3(wP.x, fY, wP.z);
 
-      AdjustSegmentUVs(q, logicalValue);
+      AdjustSegmentUVs(q, logicalValue); // Timing restored exactly as original
     }
 
     private void AdjustSegmentUVs(GameObject go, int logicalValue)
     {
       Mesh mesh = go.GetComponent<MeshFilter>().mesh; Vector2[] uvs = new Vector2[4];
-
-      int spriteIndex = logicalValue;
-
-
-      int col = spriteIndex % GRID_COLUMNS; int row = spriteIndex / GRID_COLUMNS;
+      int col = logicalValue % GRID_COLUMNS; int row = logicalValue / GRID_COLUMNS;
       float uStart = (float)col / GRID_COLUMNS; float uEnd = (float)(col + 1) / GRID_COLUMNS;
       float vTop = 1.0f - ((float)row / GRID_ROWS); float vBottom = 1.0f - ((float)(row + 1) / GRID_ROWS);
       uvs[0] = new Vector2(uStart, vBottom); uvs[1] = new Vector2(uEnd, vBottom); uvs[2] = new Vector2(uStart, vTop); uvs[3] = new Vector2(uEnd, vTop);

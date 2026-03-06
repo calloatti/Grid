@@ -30,13 +30,13 @@ namespace Calloatti.Grid
       if (_inputService.IsKeyDown("Calloatti.Grid.KeyBind.Toggle.Grid"))
       {
         OnToggleTerrainGrid?.Invoke();
-        return false;
+        return true;
       }
 
       if (_inputService.IsKeyDown("Calloatti.Grid.KeyBind.Toggle.Grid.Buildings"))
       {
         OnToggleBuildingGrid?.Invoke();
-        return false;
+        return true;
       }
 
       return false;

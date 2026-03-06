@@ -6,7 +6,7 @@ Calloatti.Grid.MarkerToolDescription,Use this tool to add Markers to the map. Sh
 Calloatti.Grid.DeleteAllRulersTitle,Delete all Rulers,
 Calloatti.Grid.DeleteAllRulersDescription,Use this tool to delete all Rulers placed in the map.,
 Calloatti.Grid.RulerToolTitle,Add and Edit Rulers,
-Calloatti.Grid.RulerToolDescription,"Use this tool to add/edit Rulers. Click a block, select orientation by moving the mouse, click outside/inside ruler preview to add ruler. Ctrl-Click on ruler block adds a gap, Ctrl-Click increases gap, Ctrl-Click red block to reset ruler. Use Alt-Click to place a Topo Ruler.",
+Calloatti.Grid.RulerToolDescription,"Use this tool to add/edit Rulers. Click a block, select orientation by moving the mouse, click outside/inside ruler preview to add ruler. Ctrl-Click on ruler block adds a gap, Ctrl-Click increases gap, Ctrl-Click red block to reset ruler.",
 Calloatti.Grid.ToolGroup.Name,Grid Tools,
 Calloatti.Grid.KeyBindingGroup,Grid,
 Calloatti.Grid.KeyBind.Toggle.Grid,Toggle Terrain Grid,

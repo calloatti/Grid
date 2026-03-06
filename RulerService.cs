@@ -5,10 +5,10 @@ using Timberborn.BlockSystem;
 using Timberborn.CameraSystem;
 using Timberborn.Coordinates;
 using Timberborn.LevelVisibilitySystem;
-using Timberborn.Persistence;
 using Timberborn.SingletonSystem;
 using Timberborn.TerrainSystem;
 using Timberborn.WorldPersistence;
+using Timberborn.QuickNotificationSystem;
 using UnityEngine;
 using System.Linq;
 
@@ -16,6 +16,9 @@ namespace Calloatti.Grid
 {
   public partial class RulerService : ILoadableSingleton, IPostLoadableSingleton, ISaveableSingleton, System.IDisposable
   {
+    public static RulerService Instance { get; private set; }
+    private readonly QuickNotificationService _notificationService;
+
     private readonly IAssetLoader _assetLoader;
     private readonly ITerrainService _terrainService;
     private readonly IBlockService _blockService;
@@ -25,12 +28,13 @@ namespace Calloatti.Grid
     private readonly ISingletonLoader _singletonLoader;
 
     private Material _rulerMaterial;
+    private Mesh _sharedQuadMesh;
     private GameObject _previewContainer;
     private GameObject[] _previewQuads;
     private Quaternion _lockedRotation;
+    private bool _rulersVisible = true;
 
     private readonly List<RulerInstance> _activeRulers = new List<RulerInstance>();
-
     private readonly Dictionary<Vector2Int, List<RulerSegment>> _segmentMap = new Dictionary<Vector2Int, List<RulerSegment>>();
     private readonly Dictionary<Vector2Int, GameObject> _sharedQuads = new Dictionary<Vector2Int, GameObject>();
 
@@ -46,47 +50,32 @@ namespace Calloatti.Grid
     private const float SliceBaseHeight = 0.85f;
 
     [Inject]
-    public RulerService(IAssetLoader assetLoader, ITerrainService terrainService, IBlockService blockService, ILevelVisibilityService levelVisibilityService, CameraService cameraService, EventBus eventBus, ISingletonLoader singletonLoader)
+    public RulerService(IAssetLoader assetLoader, ITerrainService terrainService, IBlockService blockService, ILevelVisibilityService levelVisibilityService, CameraService cameraService, EventBus eventBus, ISingletonLoader singletonLoader, QuickNotificationService notificationService)
     {
-      _assetLoader = assetLoader; _terrainService = terrainService; _blockService = blockService; _levelVisibilityService = levelVisibilityService; _cameraService = cameraService; _eventBus = eventBus; _singletonLoader = singletonLoader;
+      _assetLoader = assetLoader; _terrainService = terrainService; _blockService = blockService; _levelVisibilityService = levelVisibilityService; _cameraService = cameraService; _eventBus = eventBus; _singletonLoader = singletonLoader; _notificationService = notificationService;
+      Instance = this;
     }
 
-    public void Dispose()
+    public void ToggleRulers()
     {
-      OnDispose();
+      _rulersVisible = !_rulersVisible;
+      foreach (var r in _activeRulers) if (r.Container != null) r.Container.SetActive(_rulersVisible);
+      foreach (var q in _sharedQuads.Values) if (q != null) q.SetActive(_rulersVisible);
+      _notificationService.SendNotification($"Rulers: {(_rulersVisible ? "ON" : "OFF")}");
     }
+
+    public void Dispose() { OnDispose(); }
 
     private void OnDispose()
     {
       _eventBus.Unregister(this);
-      if (_terrainService != null)
-      {
-        _terrainService.TerrainHeightChanged -= OnTerrainHeightChanged;
-      }
-
-      if (_rulerMaterial != null)
-      {
-        Object.Destroy(_rulerMaterial);
-        _rulerMaterial = null;
-      }
-
-      if (_previewContainer != null)
-      {
-        Object.Destroy(_previewContainer);
-      }
-
-      foreach (var quad in _sharedQuads.Values)
-      {
-        if (quad != null) Object.Destroy(quad);
-      }
-      _sharedQuads.Clear();
-
-      foreach (var ruler in _activeRulers)
-      {
-        if (ruler.Container != null) Object.Destroy(ruler.Container);
-      }
-      _activeRulers.Clear();
-      _segmentMap.Clear();
+      if (_terrainService != null) _terrainService.TerrainHeightChanged -= OnTerrainHeightChanged;
+      if (_rulerMaterial != null) Object.Destroy(_rulerMaterial);
+      if (_sharedQuadMesh != null) Object.Destroy(_sharedQuadMesh);
+      if (_previewContainer != null) Object.Destroy(_previewContainer);
+      foreach (var quad in _sharedQuads.Values) if (quad != null) Object.Destroy(quad);
+      foreach (var ruler in _activeRulers) if (ruler.Container != null) Object.Destroy(ruler.Container);
+      _activeRulers.Clear(); _sharedQuads.Clear(); _segmentMap.Clear();
     }
 
     private void InternalFinalizeRuler(Vector3Int start, Vector3Int end, Quaternion rotation, List<int> explicitValues, int rType, int rPeriod, int rGap)
@@ -105,6 +94,7 @@ namespace Calloatti.Grid
       }
 
       GameObject container = new GameObject("ActiveRuler");
+      container.SetActive(_rulersVisible);
       var instance = new RulerInstance { Container = container, Segments = new List<RulerSegment>(), Start = start, Rotation = rotation, RulerType = rType, Period = rPeriod, GapSize = rGap };
       instance.End = start + new Vector3Int(step.x * (limit - 1), step.y * (limit - 1), 0);
       int maxV = _levelVisibilityService.MaxVisibleLevel;
@@ -115,10 +105,7 @@ namespace Calloatti.Grid
         if (!_terrainService.Contains(tile)) continue;
 
         int val = (explicitValues != null) ? explicitValues[i] : i + 1;
-        GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad); Object.Destroy(quad.GetComponent<Collider>());
-        quad.transform.SetParent(container.transform); quad.transform.rotation = rotation;
-        quad.GetComponent<MeshRenderer>().material = _rulerMaterial;
-
+        GameObject quad = CreateRulerQuad(container.transform, rotation);
         var seg = new RulerSegment { Obj = quad, Coords = tile, Value = val, Ruler = instance };
         UpdateQuadHeight(quad, tile, maxV, instance.RulerType, val);
 
@@ -128,23 +115,40 @@ namespace Calloatti.Grid
       _activeRulers.Add(instance);
     }
 
+    private GameObject CreateRulerQuad(Transform parent, Quaternion rotation)
+    {
+      if (_sharedQuadMesh == null) InitializeSharedMesh();
+      GameObject q = new GameObject("RulerSegment");
+      q.transform.SetParent(parent);
+      q.transform.rotation = rotation;
+      q.AddComponent<MeshFilter>().sharedMesh = _sharedQuadMesh;
+      q.AddComponent<MeshRenderer>().sharedMaterial = _rulerMaterial;
+      return q;
+    }
+
+    private void InitializeSharedMesh()
+    {
+      GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Quad);
+      _sharedQuadMesh = temp.GetComponent<MeshFilter>().sharedMesh;
+      Object.Destroy(temp);
+    }
+
     private void RegisterOverlap(Vector2Int tile, RulerSegment seg)
     {
       if (!_segmentMap.ContainsKey(tile)) _segmentMap[tile] = new List<RulerSegment>();
       _segmentMap[tile].Add(seg);
 
-      if (_segmentMap[tile].Count == 1) { seg.Obj.SetActive(true); }
+      if (_segmentMap[tile].Count == 1) { seg.Obj.SetActive(_rulersVisible); }
       else if (_segmentMap[tile].Count == 2)
       {
         _segmentMap[tile][0].Obj.SetActive(false);
         if (!_sharedQuads.ContainsKey(tile))
         {
-          GameObject shared = GameObject.CreatePrimitive(PrimitiveType.Quad); Object.Destroy(shared.GetComponent<Collider>());
-          shared.transform.rotation = seg.Ruler.Rotation; shared.GetComponent<MeshRenderer>().material = _rulerMaterial;
+          GameObject shared = CreateRulerQuad(null, seg.Ruler.Rotation);
           UpdateQuadHeight(shared, tile, _levelVisibilityService.MaxVisibleLevel, 0, 0);
           _sharedQuads[tile] = shared;
         }
-        _sharedQuads[tile].SetActive(true);
+        _sharedQuads[tile].SetActive(_rulersVisible);
         seg.Obj.SetActive(false);
       }
       else { seg.Obj.SetActive(false); }
@@ -161,7 +165,7 @@ namespace Calloatti.Grid
           if (remaining == 1)
           {
             if (_sharedQuads.ContainsKey(seg.Coords)) _sharedQuads[seg.Coords].SetActive(false);
-            _segmentMap[seg.Coords][0].Obj.SetActive(true);
+            _segmentMap[seg.Coords][0].Obj.SetActive(_rulersVisible);
           }
           else if (remaining <= 0)
           {
