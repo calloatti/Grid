@@ -11,6 +11,7 @@ namespace Calloatti.Grid
     private readonly InputService _inputService;
 
     public event Action OnToggleTerrainGrid;
+    public event Action OnToggleBuildingGrid;
 
     [Inject]
     public GridInputService(InputService inputService)
@@ -31,6 +32,13 @@ namespace Calloatti.Grid
         OnToggleTerrainGrid?.Invoke();
         return false;
       }
+
+      if (_inputService.IsKeyDown("Calloatti.Grid.KeyBind.Toggle.Grid.Buildings"))
+      {
+        OnToggleBuildingGrid?.Invoke();
+        return false;
+      }
+
       return false;
     }
   }

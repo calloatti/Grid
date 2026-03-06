@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace Calloatti.Grid
 {
-  public partial class RulerService : ILoadableSingleton, IPostLoadableSingleton, ISaveableSingleton
+  public partial class RulerService : ILoadableSingleton, IPostLoadableSingleton, ISaveableSingleton, System.IDisposable
   {
     private readonly IAssetLoader _assetLoader;
     private readonly ITerrainService _terrainService;
@@ -49,6 +49,44 @@ namespace Calloatti.Grid
     public RulerService(IAssetLoader assetLoader, ITerrainService terrainService, IBlockService blockService, ILevelVisibilityService levelVisibilityService, CameraService cameraService, EventBus eventBus, ISingletonLoader singletonLoader)
     {
       _assetLoader = assetLoader; _terrainService = terrainService; _blockService = blockService; _levelVisibilityService = levelVisibilityService; _cameraService = cameraService; _eventBus = eventBus; _singletonLoader = singletonLoader;
+    }
+
+    public void Dispose()
+    {
+      OnDispose();
+    }
+
+    private void OnDispose()
+    {
+      _eventBus.Unregister(this);
+      if (_terrainService != null)
+      {
+        _terrainService.TerrainHeightChanged -= OnTerrainHeightChanged;
+      }
+
+      if (_rulerMaterial != null)
+      {
+        Object.Destroy(_rulerMaterial);
+        _rulerMaterial = null;
+      }
+
+      if (_previewContainer != null)
+      {
+        Object.Destroy(_previewContainer);
+      }
+
+      foreach (var quad in _sharedQuads.Values)
+      {
+        if (quad != null) Object.Destroy(quad);
+      }
+      _sharedQuads.Clear();
+
+      foreach (var ruler in _activeRulers)
+      {
+        if (ruler.Container != null) Object.Destroy(ruler.Container);
+      }
+      _activeRulers.Clear();
+      _segmentMap.Clear();
     }
 
     private void InternalFinalizeRuler(Vector3Int start, Vector3Int end, Quaternion rotation, List<int> explicitValues, int rType, int rPeriod, int rGap)
@@ -102,7 +140,7 @@ namespace Calloatti.Grid
         if (!_sharedQuads.ContainsKey(tile))
         {
           GameObject shared = GameObject.CreatePrimitive(PrimitiveType.Quad); Object.Destroy(shared.GetComponent<Collider>());
-          shared.transform.rotation = _lockedRotation; shared.GetComponent<MeshRenderer>().material = _rulerMaterial;
+          shared.transform.rotation = seg.Ruler.Rotation; shared.GetComponent<MeshRenderer>().material = _rulerMaterial;
           UpdateQuadHeight(shared, tile, _levelVisibilityService.MaxVisibleLevel, 0, 0);
           _sharedQuads[tile] = shared;
         }

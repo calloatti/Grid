@@ -46,6 +46,7 @@ namespace Calloatti.Grid
     {
       _eventBus.Register(this);
       _gridInputService.OnToggleTerrainGrid += ToggleTerrainGrid;
+      _gridInputService.OnToggleBuildingGrid += ToggleBuildingGrid;
       _terrainService.TerrainHeightChanged += OnTerrainHeightChanged;
       Debug.Log($"{GridConfigurator.Prefix} GridService loaded.");
     }

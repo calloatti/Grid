@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using Timberborn.Coordinates;
+using Timberborn.TerrainSystem;
 
-namespace TimberbornModding.TopoData
+namespace Calloatti.TopoData
 {
   public partial class TopoService
   {
@@ -12,76 +13,187 @@ namespace TimberbornModding.TopoData
     private const float HeightOffset = 0.05f;
 
     private GameObject _masterContainer;
-    private GameObject[] _layerObjects;
-    private MeshFilter[] _layerFilters;
-    private MeshRenderer[] _layerRenderers;
+
+    // Zero-Allocation Cache Lists
+    private List<Vector3>[] _vWalkable;
+    private List<int>[] _tWalkable;
+    private List<Vector2>[] _uWalkable;
+
+    private List<Vector3>[] _vBuried;
+    private List<int>[] _tBuried;
+    private List<Vector2>[] _uBuried;
 
     private void InitializeVisuals()
     {
       _masterContainer = new GameObject("TopoData_MasterContainer");
       int maxZ = _terrainService.Size.z;
-      _layerObjects = new GameObject[maxZ];
-      _layerFilters = new MeshFilter[maxZ];
-      _layerRenderers = new MeshRenderer[maxZ];
+
+      // Initialize Zero-Allocation Lists once
+      _vWalkable = new List<Vector3>[maxZ];
+      _tWalkable = new List<int>[maxZ];
+      _uWalkable = new List<Vector2>[maxZ];
+      _vBuried = new List<Vector3>[maxZ];
+      _tBuried = new List<int>[maxZ];
+      _uBuried = new List<Vector2>[maxZ];
 
       for (int z = 0; z < maxZ; z++)
       {
-        GameObject layerObj = new GameObject($"TopoData_Layer_{z}");
-        layerObj.transform.SetParent(_masterContainer.transform);
-        _layerFilters[z] = layerObj.AddComponent<MeshFilter>();
-        _layerRenderers[z] = layerObj.AddComponent<MeshRenderer>();
-        _layerFilters[z].mesh = new Mesh();
-        layerObj.SetActive(false);
-        _layerObjects[z] = layerObj;
+        _vWalkable[z] = new List<Vector3>();
+        _tWalkable[z] = new List<int>();
+        _uWalkable[z] = new List<Vector2>();
+
+        _vBuried[z] = new List<Vector3>();
+        _tBuried[z] = new List<int>();
+        _uBuried[z] = new List<Vector2>();
+      }
+
+      int chunksX = Mathf.CeilToInt(_terrainService.Size.x / 16f);
+      int chunksY = Mathf.CeilToInt(_terrainService.Size.y / 16f);
+
+      for (int y = 0; y < chunksY; y++)
+      {
+        for (int x = 0; x < chunksX; x++)
+        {
+          Vector2Int coord = new Vector2Int(x, y);
+          _chunks[coord] = new TopoChunk(coord, maxZ, _masterContainer.transform, _topoMaterial);
+        }
       }
     }
 
     private void OnDispose()
     {
-      if (_masterContainer != null) UnityEngine.Object.Destroy(_masterContainer);
+      foreach (var chunk in _chunks.Values)
+      {
+        chunk.Destroy();
+      }
+      _chunks.Clear();
+
+      if (_masterContainer != null)
+      {
+        UnityEngine.Object.Destroy(_masterContainer);
+      }
+
+      // ADD THIS LINE: Explicitly destroy the dynamically created material
+      if (_topoMaterial != null)
+      {
+        UnityEngine.Object.Destroy(_topoMaterial);
+      }
+    }
+
+    private Quaternion CalculateCameraRotation()
+    {
+      float snapped = Mathf.Round(_cameraService.HorizontalAngle / 90f) * 90f;
+      return Quaternion.Euler(90, snapped, 0);
+    }
+
+    private void RotateExistingMeshes(Quaternion newRotation)
+    {
+      Quaternion deltaRot = newRotation * Quaternion.Inverse(_lastRotation);
+
+      foreach (var chunk in _chunks.Values)
+      {
+        for (int z = 0; z < _terrainService.Size.z; z++)
+        {
+          // Rotate Walkable
+          Mesh wMesh = chunk.GetWalkableFilter(z).mesh;
+          if (wMesh != null && wMesh.vertexCount > 0)
+          {
+            Vector3[] vertices = wMesh.vertices;
+            for (int i = 0; i < vertices.Length; i += 4)
+            {
+              Vector3 center = (vertices[i] + vertices[i + 3]) / 2f;
+              vertices[i] = center + deltaRot * (vertices[i] - center);
+              vertices[i + 1] = center + deltaRot * (vertices[i + 1] - center);
+              vertices[i + 2] = center + deltaRot * (vertices[i + 2] - center);
+              vertices[i + 3] = center + deltaRot * (vertices[i + 3] - center);
+            }
+            wMesh.vertices = vertices;
+            wMesh.RecalculateBounds();
+            wMesh.RecalculateNormals();
+          }
+
+          // Rotate Buried
+          Mesh bMesh = chunk.GetBuriedFilter(z).mesh;
+          if (bMesh != null && bMesh.vertexCount > 0)
+          {
+            Vector3[] vertices = bMesh.vertices;
+            for (int i = 0; i < vertices.Length; i += 4)
+            {
+              Vector3 center = (vertices[i] + vertices[i + 3]) / 2f;
+              vertices[i] = center + deltaRot * (vertices[i] - center);
+              vertices[i + 1] = center + deltaRot * (vertices[i + 1] - center);
+              vertices[i + 2] = center + deltaRot * (vertices[i + 2] - center);
+              vertices[i + 3] = center + deltaRot * (vertices[i + 3] - center);
+            }
+            bMesh.vertices = vertices;
+            bMesh.RecalculateBounds();
+            bMesh.RecalculateNormals();
+          }
+        }
+      }
     }
 
     public void GenerateSnapshot()
     {
+      foreach (var chunk in _chunks.Values)
+      {
+        GenerateChunkSnapshot(chunk);
+        chunk.IsDirty = false;
+      }
+    }
+
+    private void GenerateChunkSnapshot(TopoChunk chunk)
+    {
       int maxZ = _terrainService.Size.z;
-      int sizeX = _terrainService.Size.x;
-      int sizeY = _terrainService.Size.y;
+      Quaternion rot = CalculateCameraRotation();
 
-      List<Vector3>[] verticesArray = new List<Vector3>[maxZ];
-      List<int>[] trianglesArray = new List<int>[maxZ];
-      List<Vector2>[] uvsArray = new List<Vector2>[maxZ];
-
+      // Clear the cached lists instead of allocating new ones
       for (int z = 0; z < maxZ; z++)
       {
-        verticesArray[z] = new List<Vector3>();
-        trianglesArray[z] = new List<int>();
-        uvsArray[z] = new List<Vector2>();
+        _vWalkable[z].Clear();
+        _tWalkable[z].Clear();
+        _uWalkable[z].Clear();
+
+        _vBuried[z].Clear();
+        _tBuried[z].Clear();
+        _uBuried[z].Clear();
       }
 
-      for (int y = 0; y < sizeY; y++)
+      int startX = chunk.ChunkCoords.x * 16;
+      int startY = chunk.ChunkCoords.y * 16;
+      int endX = Mathf.Min(startX + 16, _terrainService.Size.x);
+      int endY = Mathf.Min(startY + 16, _terrainService.Size.y);
+
+      for (int y = startY; y < endY; y++)
       {
-        for (int x = 0; x < sizeX; x++)
+        for (int x = startX; x < endX; x++)
         {
           Vector2Int cell = new Vector2Int(x, y);
-
           foreach (Vector3Int heightCoords in _terrainService.GetAllHeightsInCell(cell))
           {
             int displayValue = heightCoords.z;
             int surfaceZ = displayValue - 1;
-
             int currentZ = surfaceZ;
+
             while (currentZ >= -1)
             {
-              if (currentZ >= 0 && !_terrainService.Underground(new Vector3Int(x, y, currentZ)))
-              {
-                break;
-              }
+              bool isWalkable = (currentZ == surfaceZ);
+
+              if (currentZ >= 0 && !_terrainService.Underground(new Vector3Int(x, y, currentZ))) break;
 
               int layerIndex = Mathf.Clamp(currentZ, 0, maxZ - 1);
-              AddQuadToLayer(currentZ, x, y, verticesArray[layerIndex], trianglesArray[layerIndex], uvsArray[layerIndex], displayValue);
+
+              // Split logic to Walkable or Buried lists
+              if (isWalkable)
+              {
+                AddQuadToArrays(currentZ, x, y, _vWalkable[layerIndex], _tWalkable[layerIndex], _uWalkable[layerIndex], displayValue, rot);
+              }
+              else
+              {
+                AddQuadToArrays(currentZ, x, y, _vBuried[layerIndex], _tBuried[layerIndex], _uBuried[layerIndex], displayValue, rot);
+              }
 
               if (currentZ == -1) break;
-
               currentZ--;
             }
           }
@@ -90,37 +202,50 @@ namespace TimberbornModding.TopoData
 
       for (int z = 0; z < maxZ; z++)
       {
-        Mesh mesh = _layerFilters[z].mesh;
-        mesh.Clear();
-        if (verticesArray[z].Count == 0) continue;
+        // Apply Walkable Data
+        Mesh wMesh = chunk.GetWalkableFilter(z).mesh;
+        wMesh.Clear();
+        if (_vWalkable[z].Count > 0)
+        {
+          wMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+          wMesh.SetVertices(_vWalkable[z]);
+          wMesh.SetTriangles(_tWalkable[z], 0);
+          wMesh.SetUVs(0, _uWalkable[z]);
+          wMesh.RecalculateBounds();
+          wMesh.RecalculateNormals();
+        }
 
-        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        mesh.SetVertices(verticesArray[z]);
-        mesh.SetTriangles(trianglesArray[z], 0);
-        mesh.SetUVs(0, uvsArray[z]);
-
-        mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
-
-        if (_topoMaterial != null) _layerRenderers[z].sharedMaterial = _topoMaterial;
+        // Apply Buried Data
+        Mesh bMesh = chunk.GetBuriedFilter(z).mesh;
+        bMesh.Clear();
+        if (_vBuried[z].Count > 0)
+        {
+          bMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+          bMesh.SetVertices(_vBuried[z]);
+          bMesh.SetTriangles(_tBuried[z], 0);
+          bMesh.SetUVs(0, _uBuried[z]);
+          bMesh.RecalculateBounds();
+          bMesh.RecalculateNormals();
+        }
       }
     }
 
-    private void AddQuadToLayer(int z, int x, int y, List<Vector3> vertices, List<int> triangles, List<Vector2> uvs, int displayValue)
+    private void AddQuadToArrays(int z, int x, int y, List<Vector3> vertices, List<int> triangles, List<Vector2> uvs, int displayValue, Quaternion rotation)
     {
       int vIndex = vertices.Count;
       float unityHeight = z + 1.0f + HeightOffset;
+      Vector3 worldPos = CoordinateSystem.GridToWorld(new Vector3(x + 0.5f, y + 0.5f, 0));
+      worldPos.y = unityHeight;
 
-      // MODIFICADO: Ahora el Quad mapea desde 0.0 hasta 1.0, cubriendo el 100% de la celda.
-      Vector3 p0 = CoordinateSystem.GridToWorld(new Vector3(x, y, 0));
-      Vector3 p1 = CoordinateSystem.GridToWorld(new Vector3(x + 1.0f, y, 0));
-      Vector3 p2 = CoordinateSystem.GridToWorld(new Vector3(x, y + 1.0f, 0));
-      Vector3 p3 = CoordinateSystem.GridToWorld(new Vector3(x + 1.0f, y + 1.0f, 0));
+      Vector3 localP0 = new Vector3(-0.5f, -0.5f, 0);
+      Vector3 localP1 = new Vector3(0.5f, -0.5f, 0);
+      Vector3 localP2 = new Vector3(-0.5f, 0.5f, 0);
+      Vector3 localP3 = new Vector3(0.5f, 0.5f, 0);
 
-      vertices.Add(new Vector3(p0.x, unityHeight, p0.z));
-      vertices.Add(new Vector3(p1.x, unityHeight, p1.z));
-      vertices.Add(new Vector3(p2.x, unityHeight, p2.z));
-      vertices.Add(new Vector3(p3.x, unityHeight, p3.z));
+      vertices.Add(worldPos + (rotation * localP0));
+      vertices.Add(worldPos + (rotation * localP1));
+      vertices.Add(worldPos + (rotation * localP2));
+      vertices.Add(worldPos + (rotation * localP3));
 
       int spriteIndex = Mathf.Clamp(displayValue, 0, 31);
       float uMin = (float)spriteIndex / GridColumns;
@@ -139,21 +264,18 @@ namespace TimberbornModding.TopoData
     private void UpdateVisibility()
     {
       int maxVisibleLevel = _levelVisibilityService.MaxVisibleLevel;
-
-      for (int z = 0; z < _layerObjects.Length; z++)
+      foreach (var chunk in _chunks.Values)
       {
-        if (_layerObjects[z] != null)
-        {
-          bool isVisible = _isActive && (z <= maxVisibleLevel);
-          _layerObjects[z].SetActive(isVisible);
-        }
+        chunk.UpdateVisibility(_isActive, maxVisibleLevel);
       }
     }
 
     private void HideAll()
     {
-      for (int z = 0; z < _layerObjects.Length; z++)
-        if (_layerObjects[z] != null) _layerObjects[z].SetActive(false);
+      foreach (var chunk in _chunks.Values)
+      {
+        chunk.UpdateVisibility(false, 0);
+      }
     }
   }
 }

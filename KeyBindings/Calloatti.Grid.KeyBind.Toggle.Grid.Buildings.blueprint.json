@@ -1,0 +1,15 @@
+{
+  "KeyBindingSpec": {
+    "Id": "Calloatti.Grid.KeyBind.Toggle.Grid.Buildings",
+    "GroupId": "Calloatti.Grid.KeyBindingGroup",
+    "LocKey": "Calloatti.Grid.KeyBind.Toggle.Grid.Buildings",
+    "Order": 0,
+    "AllowOtherModifiers": false,
+    "DevModeOnly": false
+  },
+  "PrimaryInputBindingSpec": {
+    "Path": "/Keyboard/g",
+    "InputModifiers": "Alt",
+    "Unchangeable": false
+  }
+}

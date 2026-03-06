@@ -2,14 +2,25 @@
 {
   public partial class GridService
   {
-    // STATE TRACKER: 0 = Off, 1 = Both, 2 = Terrain Only, 3 = Buildings Only
-    private int _gridState = 0;
+    // STATE TRACKER
+    private bool _showTerrain = false;
+    private bool _showBuilding = false;
 
     public void ToggleTerrainGrid()
     {
-      _gridState = (_gridState + 1) % 4;
+      _showTerrain = !_showTerrain;
+      UpdateGridState();
+    }
 
-      if (_gridState == 0)
+    public void ToggleBuildingGrid()
+    {
+      _showBuilding = !_showBuilding;
+      UpdateGridState();
+    }
+
+    private void UpdateGridState()
+    {
+      if (!_showTerrain && !_showBuilding)
       {
         TurnOffTerrainGrid();
         return;

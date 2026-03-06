@@ -5,7 +5,7 @@ using Timberborn.InputSystem;
 using Timberborn.SingletonSystem;
 using UnityEngine;
 
-namespace TimberbornModding.TopoData
+namespace Calloatti.TopoData
 {
   public class TopoInputService : ILoadableSingleton, IInputProcessor
   {

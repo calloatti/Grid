@@ -305,8 +305,8 @@ namespace Calloatti.Grid
     {
       if (_terrainGridRoot == null || !_terrainGridRoot.activeSelf) return;
 
-      bool showTerrain = _gridState == 1 || _gridState == 2;
-      bool showBuilding = _gridState == 1 || _gridState == 3;
+      bool showTerrain = _showTerrain;
+      bool showBuilding = _showBuilding;
 
       if (_bedrockMesh != null)
       {

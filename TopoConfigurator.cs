@@ -1,6 +1,6 @@
 ﻿using Bindito.Core;
 
-namespace TimberbornModding.TopoData
+namespace Calloatti.TopoData
 {
   [Context("Game")]
   public class TopoConfigurator : Configurator

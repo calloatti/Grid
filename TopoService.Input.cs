@@ -1,4 +1,6 @@
-﻿namespace TimberbornModding.TopoData
+﻿using UnityEngine;
+
+namespace Calloatti.TopoData
 {
   public partial class TopoService
   {
@@ -8,11 +10,20 @@
 
       if (_isActive)
       {
-        // Only regenerate if the terrain changed since the last build
+        Quaternion currentRotation = CalculateCameraRotation();
+
         if (_isDirty)
         {
+          // Si el terreno cambió, construimos desde cero
           GenerateSnapshot();
-          _isDirty = false; // Reset the flag after building
+          _isDirty = false;
+          _lastRotation = currentRotation;
+        }
+        else if (currentRotation != _lastRotation)
+        {
+          // Si el terreno está igual pero la cámara giró, rotamos los vértices directamente
+          RotateExistingMeshes(currentRotation);
+          _lastRotation = currentRotation;
         }
 
         // Ahora llama a la función sin parámetros, la cual calculará el nivel correcto
