@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace Calloatti.Grid
 {
-  [Bindito.Core.Context("Game")]
+  [Context("Game")]
+  [Context("MapEditor")]
   public class GridConfigurator : Configurator
   {
     public const string Prefix = "[Grid]";

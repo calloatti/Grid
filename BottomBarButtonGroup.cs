@@ -1,11 +1,13 @@
 ﻿using System.Collections.Generic;
+using Timberborn.AreaSelectionSystemUI;
+using Timberborn.AssetSystem;
 using Timberborn.BottomBarSystem;
+using Timberborn.CursorToolSystem;
+using Timberborn.InputSystem;
+using Timberborn.Localization;
+using Timberborn.SelectionSystem;
 using Timberborn.ToolButtonSystem;
 using Timberborn.ToolSystem;
-using Timberborn.InputSystem;
-using Timberborn.AssetSystem;
-using Timberborn.CursorToolSystem;
-using Timberborn.Localization;
 
 namespace Calloatti.Grid
 {
@@ -28,10 +30,13 @@ namespace Calloatti.Grid
         MarkerDeleteAll MarkerDeleteAll,
         RulerTool rulerTool,
         RulerDeleteAll deleteAllRulersTool,
+        WaterPlannerTool waterPlannerTool,
+        WaterDeleteAll waterDeleteAll,
         InputService inputService,
         CursorCoordinatesPicker cursorCoordinatesPicker,
         IAssetLoader assetLoader,
-        ILoc loc)
+        ILoc loc,
+        AreaHighlightingService areaHighlightingService)
     {
       _toolButtonFactory = toolButtonFactory;
       _toolGroupButtonFactory = toolGroupButtonFactory;
@@ -41,8 +46,9 @@ namespace Calloatti.Grid
       _assetLoader = assetLoader;
       _loc = loc;
 
-      InitializeMarkers(markerService, MarkerDeleteAll);
+      InitializeMarkers(markerService, MarkerDeleteAll, areaHighlightingService);
       InitializeRulers(rulerTool, deleteAllRulersTool);
+      InitializeWater(waterPlannerTool, waterDeleteAll);
     }
 
     public IEnumerable<BottomBarElement> GetElements()
@@ -52,6 +58,7 @@ namespace Calloatti.Grid
 
       AddMarkerTools(toolGroup, toolGroupButton);
       AddRulerTools(toolGroup, toolGroupButton);
+      AddWaterTools(toolGroup, toolGroupButton);
 
       yield return BottomBarElement.CreateMultiLevel(toolGroupButton.Root, toolGroupButton.ToolButtonsElement);
     }

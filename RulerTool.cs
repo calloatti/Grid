@@ -1,7 +1,9 @@
-﻿using Timberborn.AssetSystem;
+﻿using Timberborn.AreaSelectionSystemUI;
+using Timberborn.AssetSystem;
 using Timberborn.CursorToolSystem;
 using Timberborn.InputSystem;
 using Timberborn.Localization;
+using Timberborn.SelectionSystem;
 using Timberborn.ToolSystem;
 using Timberborn.ToolSystemUI;
 using UnityEngine;
@@ -15,6 +17,7 @@ namespace Calloatti.Grid
     private readonly RulerService _rulerService;
     private readonly IAssetLoader _assetLoader;
     private readonly ILoc _loc;
+    private readonly AreaHighlightingService _areaHighlightingService;
 
     private Texture2D _cursor;
 
@@ -23,19 +26,21 @@ namespace Calloatti.Grid
         CursorCoordinatesPicker cursorCoordinatesPicker,
         RulerService rulerService,
         IAssetLoader assetLoader,
-        ILoc loc)
+        ILoc loc,
+        AreaHighlightingService areaHighlightingService)
     {
       _inputService = inputService;
       _cursorCoordinatesPicker = cursorCoordinatesPicker;
       _rulerService = rulerService;
       _assetLoader = assetLoader;
       _loc = loc;
+      _areaHighlightingService = areaHighlightingService;
       LoadCursors();
     }
 
     private void LoadCursors()
     {
-      _cursor = _assetLoader.Load<Texture2D>("Sprites/Cursors/ruler-cursor");
+      _cursor = _assetLoader.Load<Texture2D>("Resources/ui/cursors/ruler-cursor");
     }
 
     public void Enter()
@@ -52,22 +57,30 @@ namespace Calloatti.Grid
     {
       _inputService.RemoveInputProcessor(this);
       Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
-      // Informamos al servicio que la herramienta se cerró para limpiar estados
+      // Notify the service that the tool was closed to clean up states
       _rulerService.CancelOperation();
+      _areaHighlightingService.UnhighlightAll();
     }
 
     public bool ProcessInput()
     {
+      _areaHighlightingService.UnhighlightAll();
+
+      if (_inputService.MouseOverUI) return false;
+
       var picker = _cursorCoordinatesPicker.PickOnFinished();
       if (!picker.HasValue) return false;
 
       Vector3Int currentPoint = picker.Value.TileCoordinates;
 
-      // 1. Informamos siempre del movimiento (el Service decidirá si hace preview o no)
+      _areaHighlightingService.DrawTile(currentPoint, new Color(0.2f, 0.8f, 0.2f, 0.4f));
+      _areaHighlightingService.Highlight();
+
+      // 1. Always report movement (the Service will decide whether to draw a preview)
       _rulerService.HandleMouseMove(currentPoint);
 
-      // 2. Informamos del clic (el Service decidirá si empieza, termina o borra)
-      if (_inputService.MainMouseButtonDown && !_inputService.MouseOverUI)
+      // 2. Report the click (the Service will decide to start, finish, or delete)
+      if (_inputService.MainMouseButtonDown)
       {
         _rulerService.HandleClick(currentPoint);
         return true;
