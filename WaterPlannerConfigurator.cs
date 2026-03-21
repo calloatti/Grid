@@ -3,7 +3,7 @@
 namespace Calloatti.Grid
 {
   [Context("Game")]
-  [Context("MapEditor")]
+  //[Context("MapEditor")]
   public class WaterPlannerConfigurator : Configurator
   {
     protected override void Configure()
@@ -11,6 +11,9 @@ namespace Calloatti.Grid
       Bind<WaterPlannedArea>().AsSingleton();
       Bind<WaterPlannedAreaVisualizer>().AsSingleton();
       Bind<WaterPlannerTool>().AsSingleton();
+      Bind<WaterEraserTool>().AsSingleton();
+      Bind<WaterRiseTool>().AsSingleton();
+      Bind<WaterLowerTool>().AsSingleton();
       Bind<WaterDeleteAll>().AsSingleton();
       Bind<WaterSpreadSimulator>().AsSingleton();
       Bind<MoistureSpreadVisualizer>().AsSingleton();

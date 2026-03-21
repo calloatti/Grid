@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace Calloatti.Grid
 {
-  public class WaterPlannerTool : ITool, IToolDescriptor, ILoadableSingleton
+  public class WaterEraserTool : ITool, IToolDescriptor, ILoadableSingleton
   {
     private readonly WaterPlannedArea _waterPlannedArea;
     private readonly TerrainAreaService _terrainAreaService;
@@ -21,9 +21,9 @@ namespace Calloatti.Grid
     private readonly ILoc _loc;
 
     private SelectionToolProcessor _selectionToolProcessor;
-    private readonly Color _previewColor = new Color(0.5f, 0.7f, 1.0f, 0.9f); // Lighter, solid blue for dragging
+    private readonly Color _previewColor = new Color(1.0f, 1.0f, 0.0f, 0.9f); // Yellow for erasing
 
-    public WaterPlannerTool(
+    public WaterEraserTool(
         WaterPlannedArea waterPlannedArea,
         TerrainAreaService terrainAreaService,
         AreaHighlightingService areaHighlightingService,
@@ -69,7 +69,7 @@ namespace Calloatti.Grid
       var blocks = _terrainAreaService.InMapLeveledCoordinates(inputBlocks, ray).ToList();
       if (blocks.Count == 0) return;
 
-      _waterPlannedArea.AddCoordinates(blocks);
+      _waterPlannedArea.RemoveCoordinates(blocks);
     }
 
     private void OnShowNone()
@@ -79,8 +79,8 @@ namespace Calloatti.Grid
 
     public ToolDescription DescribeTool()
     {
-      return new ToolDescription.Builder(_loc.T("Calloatti.Grid.WaterPlannerToolTitle"))
-          .AddSection(_loc.T("Calloatti.Grid.WaterPlannerToolDescription"))
+      return new ToolDescription.Builder(_loc.T("Calloatti.Grid.WaterEraserToolTitle"))
+          .AddSection(_loc.T("Calloatti.Grid.WaterEraserToolDescription"))
           .Build();
     }
   }

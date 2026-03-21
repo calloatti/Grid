@@ -31,7 +31,10 @@ namespace Calloatti.Grid
         RulerTool rulerTool,
         RulerDeleteAll deleteAllRulersTool,
         WaterPlannerTool waterPlannerTool,
+        WaterEraserTool waterEraserTool,
         WaterDeleteAll waterDeleteAll,
+        WaterRiseTool waterRiseTool,
+        WaterLowerTool waterLowerTool,
         InputService inputService,
         CursorCoordinatesPicker cursorCoordinatesPicker,
         IAssetLoader assetLoader,
@@ -48,7 +51,7 @@ namespace Calloatti.Grid
 
       InitializeMarkers(markerService, MarkerDeleteAll, areaHighlightingService);
       InitializeRulers(rulerTool, deleteAllRulersTool);
-      InitializeWater(waterPlannerTool, waterDeleteAll);
+      InitializeWater(waterPlannerTool, waterEraserTool, waterDeleteAll, waterRiseTool, waterLowerTool);
     }
 
     public IEnumerable<BottomBarElement> GetElements()
