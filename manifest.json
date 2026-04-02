@@ -1,6 +1,6 @@
 {
   "Name": "Grid",
-  "Version": "3.6.1",
+  "Version": "3.6.2",
   "Id": "Calloatti.Grid",
   "MinimumGameVersion": "1.0.12.5",
   "Description": "A high-performance standalone 2D grid overlay for map visualization.",

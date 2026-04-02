@@ -15,8 +15,13 @@ namespace Calloatti.Grid
     public float HorizontalOffsetEW = 0.0f;
     public float HorizontalOffsetNS = 0.0f;
 
+    public bool HighlightEnabled = false;
+    public int HighlightIntervalX = 10;
+    public int HighlightIntervalY = 10;
+
     public string GridColorHex = "#00000066";
     public string BuildingGridColorHex = "#00F2F266";
+    public string HighlightColorHex = "#FF000066";
 
     public List<string> MarkerPaletteHex = new List<string>
     {
@@ -26,12 +31,14 @@ namespace Calloatti.Grid
 
     [NonSerialized] public Color GridColor;
     [NonSerialized] public Color BuildingGridColor;
+    [NonSerialized] public Color HighlightColor;
     [NonSerialized] public List<Color> MarkerPalette = new List<Color>();
 
     public void InitializeColors()
     {
       GridColor = HexToColor(GridColorHex);
       BuildingGridColor = HexToColor(BuildingGridColorHex);
+      HighlightColor = HexToColor(HighlightColorHex);
       MarkerPalette = MarkerPaletteHex.Select(HexToColor).ToList();
     }
 
@@ -41,61 +48,41 @@ namespace Calloatti.Grid
         return color;
       return Color.white;
     }
+
+    public void LoadFromSimpleConfig()
+    {
+      if (ModStarter.Config == null) return;
+
+      NormalVerticalOffset = ModStarter.Config.GetFloat("GridNormalVerticalOffset");
+      SlicedVerticalOffset = ModStarter.Config.GetFloat("GridSlicedVerticalOffset");
+      HorizontalOffsetEW = ModStarter.Config.GetFloat("GridHorizontalOffsetEW");
+      HorizontalOffsetNS = ModStarter.Config.GetFloat("GridHorizontalOffsetNS");
+
+      HighlightEnabled = ModStarter.Config.GetBool("GridHighlightEnabled");
+      HighlightIntervalX = ModStarter.Config.GetInt("GridHighlightIntervalX");
+      HighlightIntervalY = ModStarter.Config.GetInt("GridHighlightIntervalY");
+
+      GridColorHex = ModStarter.Config.GetString("GridTerrainColorHex");
+      BuildingGridColorHex = ModStarter.Config.GetString("GridBuildingColorHex");
+      HighlightColorHex = ModStarter.Config.GetString("GridHighlightColorHex");
+
+      InitializeColors();
+    }
   }
 
   public partial class GridService
   {
     public GridSettings Settings { get; private set; } = new GridSettings();
 
-    private string GetConfigFilePath()
-    {
-      string localModsFolder = Path.Combine(UserDataFolder.Folder, "Mods");
-      string actualModPath = _modRepository.Mods.FirstOrDefault(m => m.Manifest.Id == ModId)?.ModDirectory.Path;
-
-      if (string.IsNullOrEmpty(actualModPath))
-      {
-        string fallback = Path.Combine(localModsFolder, "Grid");
-        if (!Directory.Exists(fallback)) Directory.CreateDirectory(fallback);
-        return Path.Combine(fallback, "grid.json");
-      }
-
-      string normalizedLocalMods = Path.GetFullPath(localModsFolder).Replace('\\', '/').TrimEnd('/');
-      string normalizedModPath = Path.GetFullPath(actualModPath).Replace('\\', '/').TrimEnd('/');
-
-      if (normalizedModPath.StartsWith(normalizedLocalMods, StringComparison.InvariantCultureIgnoreCase))
-      {
-        return Path.Combine(actualModPath, "grid.json");
-      }
-      else
-      {
-        string workshopConfigFolder = Path.Combine(localModsFolder, "Grid");
-        if (!Directory.Exists(workshopConfigFolder)) Directory.CreateDirectory(workshopConfigFolder);
-        return Path.Combine(workshopConfigFolder, "grid.json");
-      }
-    }
-
     private void EnsureSettingsLoaded()
     {
       try
       {
-        string filePath = GetConfigFilePath();
-        if (File.Exists(filePath))
-        {
-          string json = File.ReadAllText(filePath);
-          JsonUtility.FromJsonOverwrite(json, Settings);
-        }
-        else
-        {
-          string json = JsonUtility.ToJson(Settings, true);
-          File.WriteAllText(filePath, json);
-          Debug.Log($"{GridConfigurator.Prefix} Created user-friendly config: {filePath}");
-        }
-
-        Settings.InitializeColors();
+        Settings.LoadFromSimpleConfig();
       }
       catch (Exception e)
       {
-        Debug.LogError($"{GridConfigurator.Prefix} Failed to handle grid.json: {e.Message}");
+        Debug.LogError($"{GridConfigurator.Prefix} Failed to load settings from SimpleConfig: {e.Message}");
       }
     }
 
