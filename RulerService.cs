@@ -9,6 +9,7 @@ using Timberborn.SingletonSystem;
 using Timberborn.TerrainSystem;
 using Timberborn.WorldPersistence;
 using Timberborn.QuickNotificationSystem;
+using Timberborn.Localization;
 using UnityEngine;
 using System.Linq;
 
@@ -18,6 +19,7 @@ namespace Calloatti.Grid
   {
     public static RulerService Instance { get; private set; }
     private readonly QuickNotificationService _notificationService;
+    private readonly ILoc _loc;
 
     private readonly IAssetLoader _assetLoader;
     private readonly ITerrainService _terrainService;
@@ -50,9 +52,26 @@ namespace Calloatti.Grid
     private const float SliceBaseHeight = 0.85f;
 
     [Inject]
-    public RulerService(IAssetLoader assetLoader, ITerrainService terrainService, IBlockService blockService, ILevelVisibilityService levelVisibilityService, CameraService cameraService, EventBus eventBus, ISingletonLoader singletonLoader, QuickNotificationService notificationService)
+    public RulerService(
+        IAssetLoader assetLoader,
+        ITerrainService terrainService,
+        IBlockService blockService,
+        ILevelVisibilityService levelVisibilityService,
+        CameraService cameraService,
+        EventBus eventBus,
+        ISingletonLoader singletonLoader,
+        QuickNotificationService notificationService,
+        ILoc loc)
     {
-      _assetLoader = assetLoader; _terrainService = terrainService; _blockService = blockService; _levelVisibilityService = levelVisibilityService; _cameraService = cameraService; _eventBus = eventBus; _singletonLoader = singletonLoader; _notificationService = notificationService;
+      _assetLoader = assetLoader;
+      _terrainService = terrainService;
+      _blockService = blockService;
+      _levelVisibilityService = levelVisibilityService;
+      _cameraService = cameraService;
+      _eventBus = eventBus;
+      _singletonLoader = singletonLoader;
+      _notificationService = notificationService;
+      _loc = loc;
       Instance = this;
     }
 
@@ -61,7 +80,9 @@ namespace Calloatti.Grid
       _rulersVisible = !_rulersVisible;
       foreach (var r in _activeRulers) if (r.Container != null) r.Container.SetActive(_rulersVisible);
       foreach (var q in _sharedQuads.Values) if (q != null) q.SetActive(_rulersVisible);
-      _notificationService.SendNotification($"Rulers: {(_rulersVisible ? "ON" : "OFF")}");
+
+      string locKey = _rulersVisible ? "Calloatti.Grid.Rulers.NotificationOn" : "Calloatti.Grid.Rulers.NotificationOff";
+      _notificationService.SendNotification(_loc.T(locKey));
     }
 
     public void Dispose() { OnDispose(); }

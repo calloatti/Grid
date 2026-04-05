@@ -1,3 +1,5 @@
+3.6.3
+Localization updates.
 3.6.2
 Implemented Grid reference lines, simpleconfig
 3.6.1

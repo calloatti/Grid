@@ -25,8 +25,8 @@ namespace Calloatti.Grid
         if (data.Container != null) data.Container.SetActive(_markersVisible);
       }
 
-      string status = _markersVisible ? "ON" : "OFF";
-      _notificationService.SendNotification($"Markers: {status}");
+      string locKey = _markersVisible ? "Calloatti.Grid.Markers.NotificationOn" : "Calloatti.Grid.Markers.NotificationOff";
+      _notificationService.SendNotification(_loc.T(locKey));
     }
 
     private void AddMarker(Vector2Int col, int colorIndex)

@@ -28,12 +28,12 @@ namespace Calloatti.TopoData
 
         // Ahora llama a la función sin parámetros, la cual calculará el nivel correcto
         UpdateVisibility();
-        _notificationService.SendNotification("Topo Data: ON");
+        _notificationService.SendNotification(_loc.T("Calloatti.Grid.TopoData.NotificationOn"));
       }
       else
       {
         HideAll();
-        _notificationService.SendNotification("Topo Data: OFF");
+        _notificationService.SendNotification(_loc.T("Calloatti.Grid.TopoData.NotificationOff"));
       }
     }
   }

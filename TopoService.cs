@@ -6,6 +6,7 @@ using Timberborn.SingletonSystem;
 using Timberborn.TerrainSystem;
 using Timberborn.QuickNotificationSystem;
 using Timberborn.CameraSystem;
+using Timberborn.Localization;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace Calloatti.TopoData
     private readonly TopoInputService _topoInputService;
     private readonly QuickNotificationService _notificationService;
     private readonly CameraService _cameraService;
+    private readonly ILoc _loc;
 
     private bool _isActive;
     private bool _isDirty = true; // Initialized to true so first toggle builds the map
@@ -40,7 +42,8 @@ namespace Calloatti.TopoData
         EventBus eventBus,
         TopoInputService topoInputService,
         QuickNotificationService notificationService,
-        CameraService cameraService)
+        CameraService cameraService,
+        ILoc loc)
     {
       _terrainService = terrainService;
       _levelVisibilityService = levelVisibilityService;
@@ -50,6 +53,7 @@ namespace Calloatti.TopoData
       _topoInputService = topoInputService;
       _notificationService = notificationService;
       _cameraService = cameraService;
+      _loc = loc;
     }
 
     public void Load()

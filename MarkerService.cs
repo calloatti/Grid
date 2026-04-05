@@ -8,6 +8,7 @@ using Timberborn.SingletonSystem;
 using Timberborn.WorldPersistence;
 using Timberborn.Modding;
 using Timberborn.QuickNotificationSystem;
+using Timberborn.Localization;
 using Bindito.Core;
 using UnityEngine;
 
@@ -24,6 +25,7 @@ namespace Calloatti.Grid
     private readonly ISingletonLoader _singletonLoader;
     private readonly ModRepository _modRepository;
     private readonly QuickNotificationService _notificationService;
+    private readonly ILoc _loc;
 
     private readonly Dictionary<Vector2Int, MarkerData> _activeMarkers = new Dictionary<Vector2Int, MarkerData>();
 
@@ -35,7 +37,8 @@ namespace Calloatti.Grid
         EventBus eventBus,
         ISingletonLoader singletonLoader,
         ModRepository modRepository,
-        QuickNotificationService notificationService)
+        QuickNotificationService notificationService,
+        ILoc loc)
     {
       _terrainService = terrainService;
       _blockService = blockService;
@@ -44,6 +47,7 @@ namespace Calloatti.Grid
       _singletonLoader = singletonLoader;
       _modRepository = modRepository;
       _notificationService = notificationService;
+      _loc = loc;
       Instance = this;
     }
 
