@@ -45,6 +45,7 @@
     <Publicize Include="Timberborn.TerrainSystemRendering" />
     <Publicize Include="Timberborn.ToolButtonSystem" />
     <Publicize Include="Timberborn.WaterBuildings" />
+    <Publicize Include="Timberborn.WaterBuildingsUI" />
   </ItemGroup>
   
   <ItemGroup>
