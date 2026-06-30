@@ -1,7 +1,13 @@
-3.6.3
-Localization updates.
-3.6.2
-Implemented Grid reference lines, simpleconfig
-3.6.1
-Fixed cursors and icons
-Fixed blurred images when using low graphics settings
+--------------------------------------------------------------------------------
+Game Version: 1.0.0.0
+Mod Version: 3.6.3
+- Localization updates.
+--------------------------------------------------------------------------------
+Game Version: 1.0.0.0
+Mod Version: 3.6.2
+- Implemented Grid reference lines, simpleconfig
+--------------------------------------------------------------------------------
+Game Version: 1.0.0.0
+Mod Version: 3.6.1
+- Fixed cursors and icons [cite: 2]
+- Fixed blurred images when using low graphics settings
