@@ -297,7 +297,9 @@ namespace Calloatti.Grid
 
       void AddLineEx(Vector3 a, Vector3 b, bool isHighlight, List<Vector3> v, List<int> i, List<Vector3> hv, List<int> hi)
       {
-        if (isHighlight && Settings.HighlightEnabled)
+        // CHANGED: Added '&& namePrefix != "Building"' to disable highlights for building grids.
+        // This forces building grid lines to always fall into the standard (non-highlighted) vertex lists.
+        if (isHighlight && Settings.HighlightEnabled && namePrefix != "Building")
         {
           int start = hv.Count;
           hv.Add(a); hv.Add(b);
