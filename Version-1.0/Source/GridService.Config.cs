@@ -19,6 +19,10 @@ namespace Calloatti.Grid
     public int HighlightIntervalX = 10;
     public int HighlightIntervalY = 10;
 
+    // Add the new Width variables
+    public int HighlightWidthX = 0;
+    public int HighlightWidthY = 0;
+
     public string GridColorHex = "#00000066";
     public string BuildingGridColorHex = "#00F2F266";
     public string HighlightColorHex = "#FF000066";
@@ -61,6 +65,10 @@ namespace Calloatti.Grid
       HighlightEnabled = ModStarter.Config.GetBool("GridHighlightEnabled");
       HighlightIntervalX = ModStarter.Config.GetInt("GridHighlightIntervalX");
       HighlightIntervalY = ModStarter.Config.GetInt("GridHighlightIntervalY");
+
+      // Load the new Width variables
+      HighlightWidthX = ModStarter.Config.GetInt("GridHighlightWidthX");
+      HighlightWidthY = ModStarter.Config.GetInt("GridHighlightWidthY");
 
       GridColorHex = ModStarter.Config.GetString("GridTerrainColorHex");
       BuildingGridColorHex = ModStarter.Config.GetString("GridBuildingColorHex");

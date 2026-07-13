@@ -163,6 +163,16 @@ namespace Calloatti.Grid
       return GetWorldPos(vx + dx, vy + dy, height);
     }
 
+    private bool IsHighlight(int pos, int interval, int width)
+    {
+      if (interval == 0 && width == 0) return false;
+      if (width == 0) return pos % interval == 0;
+      if (interval == 0) return pos % width == 0;
+
+      int cycle = interval + width;
+      return (pos % cycle == 0) || (pos % cycle == width);
+    }
+
     public void GenerateFullTerrainGrid()
     {
       if (_terrainGridRoot != null)
@@ -228,7 +238,7 @@ namespace Calloatti.Grid
       // Draw horizontal segments (along X axis) only if adjacent bedrock is exposed
       for (int y = 0; y <= _mapSizeY; y++)
       {
-        bool isH = (y % Settings.HighlightIntervalY == 0);
+        bool isH = IsHighlight(y, Settings.HighlightIntervalY, Settings.HighlightWidthY);
         for (int x = 0; x < _mapSizeX; x++)
         {
           bool exposedCurrent = (y < _mapSizeY) && !IsSolid(x, y, 0, _isTerrainCache);
@@ -244,7 +254,7 @@ namespace Calloatti.Grid
       // Draw vertical segments (along Y axis) only if adjacent bedrock is exposed
       for (int x = 0; x <= _mapSizeX; x++)
       {
-        bool isH = (x % Settings.HighlightIntervalX == 0);
+        bool isH = IsHighlight(x, Settings.HighlightIntervalX, Settings.HighlightWidthX);
         for (int y = 0; y < _mapSizeY; y++)
         {
           bool exposedCurrent = (x < _mapSizeX) && !IsSolid(x, y, 0, _isTerrainCache);
@@ -297,8 +307,6 @@ namespace Calloatti.Grid
 
       void AddLineEx(Vector3 a, Vector3 b, bool isHighlight, List<Vector3> v, List<int> i, List<Vector3> hv, List<int> hi)
       {
-        // CHANGED: Added '&& namePrefix != "Building"' to disable highlights for building grids.
-        // This forces building grid lines to always fall into the standard (non-highlighted) vertex lists.
         if (isHighlight && Settings.HighlightEnabled && namePrefix != "Building")
         {
           int start = hv.Count;
@@ -322,10 +330,10 @@ namespace Calloatti.Grid
           return true;
         }
 
-        bool isHx = (y % Settings.HighlightIntervalY == 0);
-        bool isHy = (x % Settings.HighlightIntervalX == 0);
-        bool isHx2 = ((y + 1) % Settings.HighlightIntervalY == 0);
-        bool isHy2 = ((x + 1) % Settings.HighlightIntervalX == 0);
+        bool isHx = IsHighlight(y, Settings.HighlightIntervalY, Settings.HighlightWidthY);
+        bool isHy = IsHighlight(x, Settings.HighlightIntervalX, Settings.HighlightWidthX);
+        bool isHx2 = IsHighlight(y + 1, Settings.HighlightIntervalY, Settings.HighlightWidthY);
+        bool isHy2 = IsHighlight(x + 1, Settings.HighlightIntervalX, Settings.HighlightWidthX);
 
         AddLineEx(GetWorldPos(x, y, h), GetWorldPos(x + 1, y, h), isHx, v, i, hv, hi);
         AddLineEx(GetWorldPos(x, y, h), GetWorldPos(x, y + 1, h), isHy, v, i, hv, hi);
@@ -351,7 +359,7 @@ namespace Calloatti.Grid
 
           if (!IsSolid(x, y - 1, z, cache))
           {
-            bool isH = (y % Settings.HighlightIntervalY == 0);
+            bool isH = IsHighlight(y, Settings.HighlightIntervalY, Settings.HighlightWidthY);
             AddLineEx(GetOffsetVertex(x, y, z, hBotNormal, cache), GetOffsetVertex(x + 1, y, z, hBotNormal, cache), isH, surfaceVerts, surfaceIndices, surfaceHVerts, surfaceHIndices);
             AddLineEx(GetOffsetVertex(x, y, z, hBotSliced, cache), GetOffsetVertex(x + 1, y, z, hBotSliced, cache), isH, sliceVerts, sliceIndices, sliceHVerts, sliceHIndices);
             if (!hasAirAbove) AddLineEx(GetOffsetVertex(x, y, z, hTopNormal, cache), GetOffsetVertex(x + 1, y, z, hTopNormal, cache), isH, surfaceVerts, surfaceIndices, surfaceHVerts, surfaceHIndices);
@@ -359,7 +367,7 @@ namespace Calloatti.Grid
 
           if (!IsSolid(x + 1, y, z, cache))
           {
-            bool isH = ((x + 1) % Settings.HighlightIntervalX == 0);
+            bool isH = IsHighlight(x + 1, Settings.HighlightIntervalX, Settings.HighlightWidthX);
             AddLineEx(GetOffsetVertex(x + 1, y, z, hBotNormal, cache), GetOffsetVertex(x + 1, y + 1, z, hBotNormal, cache), isH, surfaceVerts, surfaceIndices, surfaceHVerts, surfaceHIndices);
             AddLineEx(GetOffsetVertex(x + 1, y, z, hBotSliced, cache), GetOffsetVertex(x + 1, y + 1, z, hBotSliced, cache), isH, sliceVerts, sliceIndices, sliceHVerts, sliceHIndices);
             if (!hasAirAbove) AddLineEx(GetOffsetVertex(x + 1, y + 1, z, hTopNormal, cache), GetOffsetVertex(x + 1, y + 1, z, hTopNormal, cache), isH, surfaceVerts, surfaceIndices, surfaceHVerts, surfaceHIndices);
@@ -367,7 +375,7 @@ namespace Calloatti.Grid
 
           if (!IsSolid(x, y + 1, z, cache))
           {
-            bool isH = ((y + 1) % Settings.HighlightIntervalY == 0);
+            bool isH = IsHighlight(y + 1, Settings.HighlightIntervalY, Settings.HighlightWidthY);
             AddLineEx(GetOffsetVertex(x + 1, y + 1, z, hBotNormal, cache), GetOffsetVertex(x, y + 1, z, hBotNormal, cache), isH, surfaceVerts, surfaceIndices, surfaceHVerts, surfaceHIndices);
             AddLineEx(GetOffsetVertex(x + 1, y + 1, z, hBotSliced, cache), GetOffsetVertex(x, y + 1, z, hBotSliced, cache), isH, sliceVerts, sliceIndices, sliceHVerts, sliceHIndices);
             if (!hasAirAbove) AddLineEx(GetOffsetVertex(x + 1, y + 1, z, hTopNormal, cache), GetOffsetVertex(x, y + 1, z, hTopNormal, cache), isH, surfaceVerts, surfaceIndices, surfaceHVerts, surfaceHIndices);
@@ -375,7 +383,7 @@ namespace Calloatti.Grid
 
           if (!IsSolid(x - 1, y, z, cache))
           {
-            bool isH = (x % Settings.HighlightIntervalX == 0);
+            bool isH = IsHighlight(x, Settings.HighlightIntervalX, Settings.HighlightWidthX);
             AddLineEx(GetOffsetVertex(x, y + 1, z, hBotNormal, cache), GetOffsetVertex(x, y, z, hBotNormal, cache), isH, surfaceVerts, surfaceIndices, surfaceHVerts, surfaceHIndices);
             AddLineEx(GetOffsetVertex(x, y + 1, z, hBotSliced, cache), GetOffsetVertex(x, y, z, hBotSliced, cache), isH, sliceVerts, sliceIndices, sliceHVerts, sliceHIndices);
             if (!hasAirAbove) AddLineEx(GetOffsetVertex(x, y + 1, z, hTopNormal, cache), GetOffsetVertex(x, y, z, hTopNormal, cache), isH, surfaceVerts, surfaceIndices, surfaceHVerts, surfaceHIndices);
@@ -394,7 +402,8 @@ namespace Calloatti.Grid
           int solidCount = (q1 ? 1 : 0) + (q2 ? 1 : 0) + (q3 ? 1 : 0) + (q4 ? 1 : 0);
           if (solidCount == 0 || solidCount == 4) continue;
 
-          bool isH = (vx % Settings.HighlightIntervalX == 0) || (vy % Settings.HighlightIntervalY == 0);
+          bool isH = IsHighlight(vx, Settings.HighlightIntervalX, Settings.HighlightWidthX) ||
+                     IsHighlight(vy, Settings.HighlightIntervalY, Settings.HighlightWidthY);
 
           AddLineEx(GetOffsetVertex(vx, vy, z, hBotNormal, cache), GetOffsetVertex(vx, vy, z, hTopNormal, cache), isH, surfaceVerts, surfaceIndices, surfaceHVerts, surfaceHIndices);
           AddLineEx(GetOffsetVertex(vx, vy, z, hBotSliced, cache), GetOffsetVertex(vx, vy, z, sliceHeight, cache), isH, sliceVerts, sliceIndices, sliceHVerts, sliceHIndices);

@@ -133,13 +133,8 @@ namespace Calloatti.Config
         if (equalsIndex > 0)
         {
           string prop = CleanSchemaValue(line.Substring(0, equalsIndex));
+          // CRITICAL: No comment splitting here. Values, strings, and hex lines are preserved exactly as written.
           string rawValue = line.Substring(equalsIndex + 1).Trim();
-
-          int hashIndex = rawValue.IndexOf(" #");
-          if (hashIndex >= 0)
-          {
-            rawValue = rawValue.Substring(0, hashIndex).Trim();
-          }
 
           if (prop.Equals("Key", StringComparison.OrdinalIgnoreCase))
           {
@@ -445,18 +440,35 @@ namespace Calloatti.Config
             string key = trimmed.Substring(0, equalsIndex).Trim();
             string rawValue = trimmed.Substring(equalsIndex + 1);
 
+            // Explicitly look for " #" to isolate structural inline config dividers
             int hashIndex = rawValue.IndexOf(" #");
-            int slashIndex = rawValue.IndexOf(" //");
 
-            int commentIndex = -1;
-            if (hashIndex >= 0 && slashIndex >= 0) commentIndex = Math.Min(hashIndex, slashIndex);
-            else if (hashIndex >= 0) commentIndex = hashIndex;
-            else if (slashIndex >= 0) commentIndex = slashIndex;
-
-            if (commentIndex >= 0)
+            if (hashIndex >= 0)
             {
-              _settings[key] = rawValue.Substring(0, commentIndex).Trim();
-              _comments[key] = rawValue.Substring(commentIndex).Trim();
+              _settings[key] = rawValue.Substring(0, hashIndex).Trim();
+              _comments[key] = rawValue.Substring(hashIndex).Trim();
+
+              // REACTIVE STEP: Dynamically push user text edits into runtime UI schema cache for ALL entries
+              var entry = _cachedSchema?.Settings.FirstOrDefault(s => s.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+              if (entry != null)
+              {
+                string rawInline = _comments[key];
+                if (rawInline.IndexOf("Inline:true", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                  var parts = rawInline.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                  foreach (var part in parts)
+                  {
+                    var trimmedPart = part.Trim();
+                    int colonIdx = trimmedPart.IndexOf(':');
+                    if (colonIdx > 0)
+                    {
+                      string propName = trimmedPart.Substring(0, colonIdx).Trim();
+                      string propVal = trimmedPart.Substring(colonIdx + 1).Trim();
+                      ApplySchemaProperty(_cachedSchema, entry, propName, propVal);
+                    }
+                  }
+                }
+              }
             }
             else
             {

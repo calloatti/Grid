@@ -1,3 +1,7 @@
+Game Version: 1.0.0.0 - Mod Version: 3.7.0
+- Add highlight width so the grid can do blocks and roads grid
+- Udpate simpleconfig, now has UI for mod settings
+--------------------------------------------------------------------------------
 Game Version: 1.0.0.0 - Mod Version: 3.6.5
 - Fix highlight lines on building grid
 --------------------------------------------------------------------------------
