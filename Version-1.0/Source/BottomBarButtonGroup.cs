@@ -11,35 +11,53 @@ using Timberborn.ToolSystem;
 
 namespace Calloatti.Grid
 {
-  public partial class BottomBarButtonGroup : IBottomBarElementsProvider
+  public class BottomBarButtonGroup : IBottomBarElementsProvider
   {
+    // --- CORE UI DEPENDENCIES ---
     private readonly ToolButtonFactory _toolButtonFactory;
     private readonly ToolGroupButtonFactory _toolGroupButtonFactory;
     private readonly ToolGroupService _toolGroupService;
 
+    // --- SHARED TOOL DEPENDENCIES ---
     private readonly InputService _inputService;
     private readonly CursorCoordinatesPicker _cursorCoordinatesPicker;
     private readonly IAssetLoader _assetLoader;
     private readonly ILoc _loc;
+    private readonly AreaHighlightingService _areaHighlightingService;
+
+    // --- MARKER TOOLS ---
+    private readonly MarkerService _markerService;
+    private readonly MarkerToolDeleteAll _markerToolDeleteAll;
+
+    // --- RULER TOOLS ---
+    private readonly RulerTool _rulerTool;
+    private readonly RulerToolDeleteAll _rulerToolDeleteAll;
+
+    // --- WATER TOOLS ---
+    private readonly WaterToolPlanner _waterToolPlanner;
+    private readonly WaterToolEraser _waterToolEraser;
+    private readonly WaterToolDeleteAll _waterToolDeleteAll;
+    private readonly WaterToolRise _waterToolRise;
+    private readonly WaterToolLower _waterToolLower;
 
     public BottomBarButtonGroup(
         ToolButtonFactory toolButtonFactory,
         ToolGroupButtonFactory toolGroupButtonFactory,
         ToolGroupService toolGroupService,
-        MarkerService markerService,
-        MarkerDeleteAll MarkerDeleteAll,
-        RulerTool rulerTool,
-        RulerDeleteAll deleteAllRulersTool,
-        WaterPlannerTool waterPlannerTool,
-        WaterEraserTool waterEraserTool,
-        WaterDeleteAll waterDeleteAll,
-        WaterRiseTool waterRiseTool,
-        WaterLowerTool waterLowerTool,
         InputService inputService,
         CursorCoordinatesPicker cursorCoordinatesPicker,
         IAssetLoader assetLoader,
         ILoc loc,
-        AreaHighlightingService areaHighlightingService)
+        AreaHighlightingService areaHighlightingService,
+        MarkerService markerService,
+        MarkerToolDeleteAll markerToolDeleteAll,
+        RulerTool rulerTool,
+        RulerToolDeleteAll rulerToolDeleteAll,
+        WaterToolPlanner waterToolPlanner,
+        WaterToolEraser waterToolEraser,
+        WaterToolDeleteAll waterToolDeleteAll,
+        WaterToolRise waterToolRise,
+        WaterToolLower waterToolLower)
     {
       _toolButtonFactory = toolButtonFactory;
       _toolGroupButtonFactory = toolGroupButtonFactory;
@@ -48,10 +66,19 @@ namespace Calloatti.Grid
       _cursorCoordinatesPicker = cursorCoordinatesPicker;
       _assetLoader = assetLoader;
       _loc = loc;
+      _areaHighlightingService = areaHighlightingService;
 
-      InitializeMarkers(markerService, MarkerDeleteAll, areaHighlightingService);
-      InitializeRulers(rulerTool, deleteAllRulersTool);
-      InitializeWater(waterPlannerTool, waterEraserTool, waterDeleteAll, waterRiseTool, waterLowerTool);
+      _markerService = markerService;
+      _markerToolDeleteAll = markerToolDeleteAll;
+
+      _rulerTool = rulerTool;
+      _rulerToolDeleteAll = rulerToolDeleteAll;
+
+      _waterToolPlanner = waterToolPlanner;
+      _waterToolEraser = waterToolEraser;
+      _waterToolDeleteAll = waterToolDeleteAll;
+      _waterToolRise = waterToolRise;
+      _waterToolLower = waterToolLower;
     }
 
     public IEnumerable<BottomBarElement> GetElements()
@@ -71,6 +98,41 @@ namespace Calloatti.Grid
       ToolButton button = _toolButtonFactory.Create(tool, imageName, toolGroupButton.ToolButtonsElement);
       toolGroupButton.AddTool(button);
       _toolGroupService.AssignToGroup(toolGroup, tool);
+    }
+
+    // ====================================================================
+    // MARKERS
+    // ====================================================================
+    private void AddMarkerTools(ToolGroupSpec toolGroup, ToolGroupButton toolGroupButton)
+    {
+      for (int i = 0; i < 8; i++)
+      {
+        var colorTool = new MarkerTool(_inputService, _cursorCoordinatesPicker, _assetLoader, _markerService, _loc, _areaHighlightingService, i);
+        AddToolButton(colorTool, $"map-marker-cross-{i}", toolGroup, toolGroupButton);
+      }
+
+      AddToolButton(_markerToolDeleteAll, "trash", toolGroup, toolGroupButton);
+    }
+
+    // ====================================================================
+    // RULERS
+    // ====================================================================
+    private void AddRulerTools(ToolGroupSpec toolGroup, ToolGroupButton toolGroupButton)
+    {
+      AddToolButton(_rulerTool, "ruler-button", toolGroup, toolGroupButton);
+      AddToolButton(_rulerToolDeleteAll, "trash", toolGroup, toolGroupButton);
+    }
+
+    // ====================================================================
+    // WATER PLANNER
+    // ====================================================================
+    private void AddWaterTools(ToolGroupSpec toolGroup, ToolGroupButton toolGroupButton)
+    {
+      AddToolButton(_waterToolPlanner, "water", toolGroup, toolGroupButton);
+      AddToolButton(_waterToolEraser, "CancelToolIcon", toolGroup, toolGroupButton);
+      AddToolButton(_waterToolRise, "water-rise", toolGroup, toolGroupButton);
+      AddToolButton(_waterToolLower, "water-lower", toolGroup, toolGroupButton);
+      AddToolButton(_waterToolDeleteAll, "trash", toolGroup, toolGroupButton);
     }
   }
 }

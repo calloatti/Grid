@@ -9,10 +9,12 @@ ControlType = "Slider"
 MinValue = -2.0
 MaxValue = 2.0
 Step = 0.01
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridSlicedVerticalOffset"
 Type = "float"
@@ -23,10 +25,12 @@ ControlType = "Slider"
 MinValue = -2.0
 MaxValue = 2.0
 Step = 0.01
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridHorizontalOffsetEW"
 Type = "float"
@@ -37,10 +41,12 @@ ControlType = "Slider"
 MinValue = -1.0
 MaxValue = 1.0
 Step = 0.01
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridHorizontalOffsetNS"
 Type = "float"
@@ -51,10 +57,12 @@ ControlType = "Slider"
 MinValue = -1.0
 MaxValue = 1.0
 Step = 0.01
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridTerrainColorHex"
 Type = "string"
@@ -62,27 +70,25 @@ DefaultValue = "#00000066"
 Label = "Terrain Grid Color"
 Tooltip = "Hex color code for the terrain grid (#RRGGBBAA)."
 ControlType = "TextField"
-MinValue = 0
-MaxValue = 0
-Step = 0
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridBuildingColorHex"
 Type = "string"
 DefaultValue = "#00F2F266"
 Label = "Building Grid Color"
 Tooltip = "Hex color code for the building grid (#RRGGBBAA)."
-ControlType = "TextField"
-MinValue = 0
-MaxValue = 0
-Step = 0
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
+ControlType = "color"
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridHighlightEnabled"
 Type = "bool"
@@ -90,27 +96,25 @@ DefaultValue = false
 Label = "Enable Grid Highlight"
 Tooltip = "Draws distinct colored lines at set intervals for easier city planning."
 ControlType = "Toggle"
-MinValue = 0
-MaxValue = 0
-Step = 0
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridHighlightColorHex"
 Type = "string"
 DefaultValue = "#FF000066"
 Label = "Highlight Grid Color"
 Tooltip = "Hex color code for the highlighted grid lines (#RRGGBBAA)."
-ControlType = "TextField"
-MinValue = 0
-MaxValue = 0
-Step = 0
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
+ControlType = "color"
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridHighlightIntervalX"
 Type = "int"
@@ -121,10 +125,12 @@ ControlType = "Slider"
 MinValue = 0
 MaxValue = 128
 Step = 1
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridHighlightIntervalY"
 Type = "int"
@@ -135,10 +141,12 @@ ControlType = "Slider"
 MinValue = 0
 MaxValue = 128
 Step = 1
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridHighlightWidthX"
 Type = "int"
@@ -149,10 +157,12 @@ ControlType = "Slider"
 MinValue = 0
 MaxValue = 64
 Step = 1
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
 
 Key = "GridHighlightWidthY"
 Type = "int"
@@ -163,7 +173,8 @@ ControlType = "Slider"
 MinValue = 0
 MaxValue = 64
 Step = 1
-Options = []
-AvailableIn = ["MainMenu", "Game", "MapEditor"]
 RequiresRestart = false
 RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true

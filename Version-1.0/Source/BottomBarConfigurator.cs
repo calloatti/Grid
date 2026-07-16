@@ -8,7 +8,7 @@ namespace Calloatti.Grid
   {
     public void Configure(IContainerDefinition containerDefinition)
     {
-      // 1. Bind the UI Provider (Markers/Rulers are now in their own Configurators)
+      // 1. Bind the UI Provider 
       containerDefinition.Bind<BottomBarButtonGroup>().AsSingleton();
 
       // 2. Register the UI with Timberborn

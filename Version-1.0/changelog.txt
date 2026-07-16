@@ -1,3 +1,16 @@
+Game Version: 1.0.0.0 - Mod Version: 3.8.1
+- SimpleConfig UI integration
+--------------------------------------------------------------------------------
+Game Version: 1.0.0.0 - Mod Version: 3.8.0
+- Migrated Rulers to the new 5-row linear `grid-atlas` layout and added a legacy converter for save data compatibility.
+- Refactored project file architecture into a clean Module/Service/Tool structural pattern across Grid, Ruler, Marker, and Water features.
+- Eliminated loop GC allocation overhead in `WaterSpreadSimulator` and `MarkerService` using zero-allocation reusable buffers.
+- Hoisted redundant modulo math out of inner meshing loops to improve frame rates on large maps.
+--------------------------------------------------------------------------------
+Game Version: 1.0.0.0 - Mod Version: 3.7.1
+- Performance boost: added fast-reject filtering
+- Optimized rendering: update debouncing, memory reuse, and frame-amortization
+--------------------------------------------------------------------------------
 Game Version: 1.0.0.0 - Mod Version: 3.7.0
 - Add highlight width so the grid can do blocks and roads grid
 - Udpate simpleconfig, now has UI for mod settings
