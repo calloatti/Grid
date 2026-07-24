@@ -1,3 +1,8 @@
+Game Version: 1.0.0.0 - Mod Version: 3.8.2
+- Building grid now detects all placed objects (relics, blockages, etc.), excluding trees and paths.
+- Fixed building grid cache Z bounds to use full map height (terrain + MaxHeightAboveTerrain), not just terrain height.
+- Fixed TopoData namespace to Calloatti.Grid.
+--------------------------------------------------------------------------------
 Game Version: 1.0.0.0 - Mod Version: 3.8.1
 - SimpleConfig UI integration
 --------------------------------------------------------------------------------

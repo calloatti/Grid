@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using Bindito.Core;
 using Timberborn.BlockSystem;
-using Timberborn.Buildings;
 using Timberborn.Coordinates;
 using Timberborn.LevelVisibilitySystem;
 using Timberborn.NaturalResources;
-using Timberborn.Ruins;
 using Timberborn.SingletonSystem;
 using Timberborn.TerrainSystem;
 using UnityEngine;
@@ -56,6 +54,7 @@ namespace Calloatti.Grid
     private int _mapSizeX;
     private int _mapSizeY;
     private int _mapMaxZ;
+    private int _buildingMaxZ;
 
     private HashSet<int> _dirtyLevels = new HashSet<int>();
 
@@ -216,13 +215,11 @@ namespace Calloatti.Grid
 
       if (bo.GetComponent<NaturalResource>() != null) return;
 
-      if (!bo.Solid && bo.GetComponent<Building>() == null && bo.GetComponent<Ruin>() == null) return;
-
       bool levelDirtied = false;
       foreach (var coords in bo.PositionedBlocks.GetAllCoordinates())
       {
         int x = coords.x; int y = coords.y; int z = coords.z;
-        if (x >= 0 && x < _mapSizeX && y >= 0 && y < _mapSizeY && z >= 0 && z < _mapMaxZ)
+        if (x >= 0 && x < _mapSizeX && y >= 0 && y < _mapSizeY && z >= 0 && z < _buildingMaxZ)
         {
           _isBuildingCache[x, y, z] = CheckIfBuildingBlock(new Vector3Int(x, y, z));
           _dirtyLevels.Add(z);
@@ -280,13 +277,15 @@ namespace Calloatti.Grid
 
     private void UpdateTerrainCache()
     {
-      Vector3Int size = _terrainService.Size;
-      _mapSizeX = size.x;
-      _mapSizeY = size.y;
-      _mapMaxZ = size.z;
+      Vector3Int terrainSize = _terrainService.Size;
+      Vector3Int blockSize = _blockService.Size;
+      _mapSizeX = terrainSize.x;
+      _mapSizeY = terrainSize.y;
+      _mapMaxZ = terrainSize.z;
+      _buildingMaxZ = blockSize.z;
 
       _isTerrainCache = new bool[_mapSizeX, _mapSizeY, _mapMaxZ];
-      _isBuildingCache = new bool[_mapSizeX, _mapSizeY, _mapMaxZ];
+      _isBuildingCache = new bool[_mapSizeX, _mapSizeY, _buildingMaxZ];
 
       for (int x = 0; x < _mapSizeX; x++)
       {
@@ -294,9 +293,18 @@ namespace Calloatti.Grid
         {
           for (int z = 0; z < _mapMaxZ; z++)
           {
-            Vector3Int pos = new Vector3Int(x, y, z);
-            _isTerrainCache[x, y, z] = _terrainService.Underground(pos);
-            _isBuildingCache[x, y, z] = CheckIfBuildingBlock(pos);
+            _isTerrainCache[x, y, z] = _terrainService.Underground(new Vector3Int(x, y, z));
+          }
+        }
+      }
+
+      for (int x = 0; x < _mapSizeX; x++)
+      {
+        for (int y = 0; y < _mapSizeY; y++)
+        {
+          for (int z = 0; z < _buildingMaxZ; z++)
+          {
+            _isBuildingCache[x, y, z] = CheckIfBuildingBlock(new Vector3Int(x, y, z));
           }
         }
       }
@@ -312,17 +320,14 @@ namespace Calloatti.Grid
         Block runtimeBlock = obj.PositionedBlocks.GetBlock(pos);
         if (runtimeBlock.Occupation == BlockOccupations.Path) continue;
 
-        if (obj.Solid || obj.GetComponent<Building>() != null || obj.GetComponent<Ruin>() != null)
-        {
-          return true;
-        }
+        return true;
       }
       return false;
     }
 
     private bool IsSolid(int x, int y, int z, bool[,,] cache)
     {
-      if (x < 0 || x >= _mapSizeX || y < 0 || y >= _mapSizeY || z < 0 || z >= _mapMaxZ) return false;
+      if (x < 0 || x >= _mapSizeX || y < 0 || y >= _mapSizeY || z < 0 || z >= cache.GetLength(2)) return false;
       return cache[x, y, z];
     }
 
@@ -383,19 +388,20 @@ namespace Calloatti.Grid
       InitializeMaterials();
       UpdateTerrainCache();
 
-      _terrainSurfaceMeshes = new GameObject[_mapMaxZ];
-      _terrainSurfaceHighlightMeshes = new GameObject[_mapMaxZ];
-      _terrainSliceMeshes = new GameObject[_mapMaxZ];
-      _terrainSliceHighlightMeshes = new GameObject[_mapMaxZ];
+      int maxMeshZ = Math.Max(_mapMaxZ, _buildingMaxZ);
+      _terrainSurfaceMeshes = new GameObject[maxMeshZ];
+      _terrainSurfaceHighlightMeshes = new GameObject[maxMeshZ];
+      _terrainSliceMeshes = new GameObject[maxMeshZ];
+      _terrainSliceHighlightMeshes = new GameObject[maxMeshZ];
 
-      _buildingSurfaceMeshes = new GameObject[_mapMaxZ];
-      _buildingSurfaceHighlightMeshes = new GameObject[_mapMaxZ];
-      _buildingSliceMeshes = new GameObject[_mapMaxZ];
-      _buildingSliceHighlightMeshes = new GameObject[_mapMaxZ];
+      _buildingSurfaceMeshes = new GameObject[maxMeshZ];
+      _buildingSurfaceHighlightMeshes = new GameObject[maxMeshZ];
+      _buildingSliceMeshes = new GameObject[maxMeshZ];
+      _buildingSliceHighlightMeshes = new GameObject[maxMeshZ];
 
       BuildBedrockMesh();
 
-      for (int z = 0; z < _mapMaxZ; z++)
+      for (int z = 0; z < Math.Max(_mapMaxZ, _buildingMaxZ); z++)
       {
         BuildLevelMeshes(z);
       }
@@ -468,13 +474,19 @@ namespace Calloatti.Grid
 
     private void BuildLevelMeshes(int z)
     {
-      BuildGridLevelMeshes(z, _isTerrainCache, "Terrain", _terrainMaterial,
-        out _terrainSurfaceMeshes[z], out _terrainSurfaceHighlightMeshes[z],
-        out _terrainSliceMeshes[z], out _terrainSliceHighlightMeshes[z]);
+      if (z < _mapMaxZ)
+      {
+        BuildGridLevelMeshes(z, _isTerrainCache, "Terrain", _terrainMaterial,
+          out _terrainSurfaceMeshes[z], out _terrainSurfaceHighlightMeshes[z],
+          out _terrainSliceMeshes[z], out _terrainSliceHighlightMeshes[z]);
+      }
 
-      BuildGridLevelMeshes(z, _isBuildingCache, "Building", _buildingMaterial,
-        out _buildingSurfaceMeshes[z], out _buildingSurfaceHighlightMeshes[z],
-        out _buildingSliceMeshes[z], out _buildingSliceHighlightMeshes[z]);
+      if (z < _buildingMaxZ)
+      {
+        BuildGridLevelMeshes(z, _isBuildingCache, "Building", _buildingMaterial,
+          out _buildingSurfaceMeshes[z], out _buildingSurfaceHighlightMeshes[z],
+          out _buildingSliceMeshes[z], out _buildingSliceHighlightMeshes[z]);
+      }
     }
 
     private void BuildGridLevelMeshes(int z, bool[,,] cache, string namePrefix, Material mat,
@@ -624,13 +636,17 @@ namespace Calloatti.Grid
 
       int maxV = _levelVisibilityService.MaxVisibleLevel;
 
-      for (int z = 0; z < _mapMaxZ; z++)
+      int maxMeshZ = Math.Max(_mapMaxZ, _buildingMaxZ);
+      for (int z = 0; z < maxMeshZ; z++)
       {
-        if (_terrainSurfaceMeshes[z] != null) _terrainSurfaceMeshes[z].SetActive(showTerrain && z < maxV);
-        if (_terrainSurfaceHighlightMeshes[z] != null) _terrainSurfaceHighlightMeshes[z].SetActive(showTerrain && z < maxV);
+        if (z < _mapMaxZ)
+        {
+          if (_terrainSurfaceMeshes[z] != null) _terrainSurfaceMeshes[z].SetActive(showTerrain && z < maxV);
+          if (_terrainSurfaceHighlightMeshes[z] != null) _terrainSurfaceHighlightMeshes[z].SetActive(showTerrain && z < maxV);
 
-        if (_terrainSliceMeshes[z] != null) _terrainSliceMeshes[z].SetActive(showTerrain && z == maxV);
-        if (_terrainSliceHighlightMeshes[z] != null) _terrainSliceHighlightMeshes[z].SetActive(showTerrain && z == maxV);
+          if (_terrainSliceMeshes[z] != null) _terrainSliceMeshes[z].SetActive(showTerrain && z == maxV);
+          if (_terrainSliceHighlightMeshes[z] != null) _terrainSliceHighlightMeshes[z].SetActive(showTerrain && z == maxV);
+        }
 
         if (_buildingSurfaceMeshes[z] != null) _buildingSurfaceMeshes[z].SetActive(showBuilding && z < maxV);
         if (_buildingSurfaceHighlightMeshes[z] != null) _buildingSurfaceHighlightMeshes[z].SetActive(showBuilding && z < maxV);

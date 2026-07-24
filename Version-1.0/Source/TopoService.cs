@@ -12,7 +12,7 @@ using Timberborn.QuickNotificationSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.TerrainSystem;
 
-namespace Calloatti.TopoData
+namespace Calloatti.Grid
 {
   public class TopoService : ILoadableSingleton, IPostLoadableSingleton, ILateUpdatableSingleton, IDisposable
   {

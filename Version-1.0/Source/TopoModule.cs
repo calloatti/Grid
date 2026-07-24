@@ -4,7 +4,7 @@ using Timberborn.InputSystem;
 using Timberborn.SingletonSystem;
 using UnityEngine;
 
-namespace Calloatti.TopoData
+namespace Calloatti.Grid
 {
   // =========================================================================
   // 1. CONFIGURATOR
