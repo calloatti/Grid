@@ -1,42 +1,31 @@
-Game Version: 1.0.0.0 - Mod Version: 3.9.0
+* Game Version: 1.0.0.0 - Mod Version: 3.9.0
 - Marker and Ruler tools are now available in the MapEditor toolbar.
 - Map markers and rulers placed in MapEditor persist in the map file but do not transfer when players start a new game.
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.8.2
+* Game Version: 1.0.0.0 - Mod Version: 3.8.2
 - Building grid now detects all placed objects (relics, blockages, etc.), excluding trees and paths.
 - Fixed building grid cache Z bounds to use full map height (terrain + MaxHeightAboveTerrain), not just terrain height.
 - Fixed TopoData namespace to Calloatti.Grid.
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.8.1
+* Game Version: 1.0.0.0 - Mod Version: 3.8.1
 - SimpleConfig UI integration
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.8.0
+* Game Version: 1.0.0.0 - Mod Version: 3.8.0
 - Migrated Rulers to the new 5-row linear `grid-atlas` layout and added a legacy converter for save data compatibility.
 - Refactored project file architecture into a clean Module/Service/Tool structural pattern across Grid, Ruler, Marker, and Water features.
 - Eliminated loop GC allocation overhead in `WaterSpreadSimulator` and `MarkerService` using zero-allocation reusable buffers.
 - Hoisted redundant modulo math out of inner meshing loops to improve frame rates on large maps.
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.7.1
+* Game Version: 1.0.0.0 - Mod Version: 3.7.1
 - Performance boost: added fast-reject filtering
 - Optimized rendering: update debouncing, memory reuse, and frame-amortization
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.7.0
+* Game Version: 1.0.0.0 - Mod Version: 3.7.0
 - Add highlight width so the grid can do blocks and roads grid
 - Udpate simpleconfig, now has UI for mod settings
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.6.5
+* Game Version: 1.0.0.0 - Mod Version: 3.6.5
 - Fix highlight lines on building grid
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.6.4
+* Game Version: 1.0.0.0 - Mod Version: 3.6.4
 - Updated simpleconfig
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.6.3
+* Game Version: 1.0.0.0 - Mod Version: 3.6.3
 - Localization updates.
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.6.2
+* Game Version: 1.0.0.0 - Mod Version: 3.6.2
 - Implemented Grid reference lines, simpleconfig
---------------------------------------------------------------------------------
-Game Version: 1.0.0.0 - Mod Version: 3.6.1
+* Game Version: 1.0.0.0 - Mod Version: 3.6.1
 - Fixed cursors and icons
 - Fixed blurred images when using low graphics settings
---------------------------------------------------------------------------------
