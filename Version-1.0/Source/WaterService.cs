@@ -3,7 +3,6 @@ using System.Linq;
 using Timberborn.Common;
 using Timberborn.LevelVisibilitySystem;
 using Timberborn.MapIndexSystem;
-using Timberborn.MapStateSystem; // <-- FIXED: Restored to the correct namespace
 using Timberborn.Persistence;
 using Timberborn.Rendering;
 using Timberborn.RootProviders;
@@ -24,18 +23,16 @@ namespace Calloatti.Grid
 
     private readonly ISingletonLoader _singletonLoader;
     private readonly EventBus _eventBus;
-    private readonly MapEditorMode _mapEditorMode;
 
     private readonly HashSet<Vector3Int> _area = new HashSet<Vector3Int>();
 
     public IEnumerable<Vector3Int> Area => _area.AsReadOnlyEnumerable();
     public bool IsEmpty => _area.Count == 0;
 
-    public WaterPlannedArea(ISingletonLoader singletonLoader, EventBus eventBus, MapEditorMode mapEditorMode)
+    public WaterPlannedArea(ISingletonLoader singletonLoader, EventBus eventBus)
     {
       _singletonLoader = singletonLoader;
       _eventBus = eventBus;
-      _mapEditorMode = mapEditorMode;
     }
 
     public void Load()
@@ -48,10 +45,7 @@ namespace Calloatti.Grid
 
     public void Save(ISingletonSaver singletonSaver)
     {
-      if (!_mapEditorMode.IsMapEditor)
-      {
-        singletonSaver.GetSingleton(WaterAreaKey).Set(AreaKey, _area);
-      }
+      singletonSaver.GetSingleton(WaterAreaKey).Set(AreaKey, _area);
     }
 
     public bool Contains(Vector3Int coordinates) => _area.Contains(coordinates);

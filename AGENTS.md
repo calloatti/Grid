@@ -93,6 +93,37 @@ Each feature follows this pattern:
 - Multiple flags can be combined on a single `Block` (bitmask)
 - Rendering priority (highest to lowest): Top > Corners > Middle > Bottom > Path > Floor
 
+## MapEditor Context & Dual Persistence Keys
+
+### Context Registration
+All module configurators now register in both `[Context("Game")]` and `[Context("MapEditor")]` to make tools available in the map editor toolbar:
+
+| Configurator | File |
+|---|---|
+| `GridConfigurator` | `Source/GridModule.cs` |
+| `TopoConfigurator` | `Source/TopoModule.cs` |
+| `MarkerConfigurator` | `Source/MarkerModule.cs` |
+| `RulerConfigurator` | `Source/RulerModule.cs` |
+| `BottomBarConfigurator` | `Source/BottomBarConfigurator.cs` |
+| `MapEditorBottomBarConfigurator` | `Source/MapEditorBottomBarConfigurator.cs` |
+
+### Dual Persistence Keys (No Cross-Context Leak)
+To prevent map editor data from transferring into new games, each persistable service uses separate singleton keys per context:
+
+| Service | Game Key | MapEditor Key |
+|---|---|---|
+| `MarkerService` | `Calloatti.Grid.Markers` | `Calloatti.Grid.Markers.Map` |
+| `RulerService` | `Calloatti.Grid.Rulers` | `Calloatti.Grid.Rulers.Map` |
+
+Key selection uses `MapEditorMode.IsMapEditor` (from `Timberborn.MapStateSystem`):
+- `Save()` writes to the context-appropriate key
+- `Load()` reads from the context-appropriate key
+
+This ensures:
+- Map makers' markers/rulers persist across MapEditor sessions ✓
+- Markers/rulers placed in MapEditor do NOT appear when a player starts a new game from that map ✓
+- Game save/load works as before ✓
+
 ## Key Game API Namespaces
 - `Timberborn.BlockSystem` — `BlockObject`, `IBlockService`, `BlockOccupations`, events
 - `Timberborn.Buildings` — `Building` component

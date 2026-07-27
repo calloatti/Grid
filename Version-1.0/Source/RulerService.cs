@@ -12,6 +12,7 @@ using Timberborn.QuickNotificationSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.TerrainSystem;
 using Timberborn.WorldPersistence;
+using Timberborn.MapStateSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -31,6 +32,7 @@ namespace Calloatti.Grid
     private readonly CameraService _cameraService;
     private readonly EventBus _eventBus;
     private readonly ISingletonLoader _singletonLoader;
+    private readonly MapEditorMode _mapEditorMode;
 
     // --- CONSTANTS ---
     public const int RedSquareValue = 1024;
@@ -43,6 +45,7 @@ namespace Calloatti.Grid
 
     // --- PERSISTENCE KEYS ---
     private static readonly SingletonKey RulersKey = new SingletonKey("Calloatti.Grid.Rulers");
+    private static readonly SingletonKey RulersMapKey = new SingletonKey("Calloatti.Grid.Rulers.Map");
     private static readonly ListKey<Vector3Int> StartsKey = new ListKey<Vector3Int>("Starts");
     private static readonly ListKey<Vector3Int> EndsKey = new ListKey<Vector3Int>("Ends");
     private static readonly ListKey<Quaternion> RotationsKey = new ListKey<Quaternion>("Rotations");
@@ -81,6 +84,7 @@ namespace Calloatti.Grid
         CameraService cameraService,
         EventBus eventBus,
         ISingletonLoader singletonLoader,
+        MapEditorMode mapEditorMode,
         QuickNotificationService notificationService,
         ILoc loc)
     {
@@ -91,6 +95,7 @@ namespace Calloatti.Grid
       _cameraService = cameraService;
       _eventBus = eventBus;
       _singletonLoader = singletonLoader;
+      _mapEditorMode = mapEditorMode;
       _notificationService = notificationService;
       _loc = loc;
       Instance = this;
@@ -102,7 +107,8 @@ namespace Calloatti.Grid
 
     public void Load()
     {
-      if (_singletonLoader.TryGetSingleton(RulersKey, out IObjectLoader loader))
+      SingletonKey key = _mapEditorMode.IsMapEditor ? RulersMapKey : RulersKey;
+      if (_singletonLoader.TryGetSingleton(key, out IObjectLoader loader))
       {
         if (loader.Has(StartsKey))
         {
@@ -157,7 +163,8 @@ namespace Calloatti.Grid
 
     public void Save(ISingletonSaver saver)
     {
-      IObjectSaver os = saver.GetSingleton(RulersKey);
+      SingletonKey key = _mapEditorMode.IsMapEditor ? RulersMapKey : RulersKey;
+      IObjectSaver os = saver.GetSingleton(key);
       List<Vector3Int> s = new List<Vector3Int>(), e = new List<Vector3Int>();
       List<Quaternion> r = new List<Quaternion>();
       List<int> f = new List<int>(), st = new List<int>();

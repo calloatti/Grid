@@ -15,6 +15,7 @@ namespace Calloatti.Grid
   // 1. CONFIGURATOR
   // =========================================================================
   [Context("Game")]
+  [Context("MapEditor")]
   public class MarkerConfigurator : Configurator
   {
     protected override void Configure()

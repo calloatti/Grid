@@ -8,6 +8,7 @@ using Timberborn.Buildings;
 using Timberborn.Coordinates;
 using Timberborn.LevelVisibilitySystem;
 using Timberborn.Localization;
+using Timberborn.MapStateSystem;
 using Timberborn.Modding;
 using Timberborn.NaturalResources;
 using Timberborn.Persistence;
@@ -33,6 +34,7 @@ namespace Calloatti.Grid
     private readonly ILevelVisibilityService _levelVisibilityService;
     private readonly EventBus _eventBus;
     private readonly ISingletonLoader _singletonLoader;
+    private readonly MapEditorMode _mapEditorMode;
     private readonly ModRepository _modRepository;
     private readonly QuickNotificationService _notificationService;
     private readonly ILoc _loc;
@@ -58,6 +60,7 @@ namespace Calloatti.Grid
 
     // --- PERSISTENCE KEYS ---
     private static readonly SingletonKey MarkersKey = new SingletonKey("Calloatti.Grid.Markers");
+    private static readonly SingletonKey MarkersMapKey = new SingletonKey("Calloatti.Grid.Markers.Map");
     private static readonly ListKey<int> XsKey = new ListKey<int>("Xs");
     private static readonly ListKey<int> YsKey = new ListKey<int>("Ys");
     private static readonly ListKey<int> ColorsKey = new ListKey<int>("Colors");
@@ -73,6 +76,7 @@ namespace Calloatti.Grid
         ILevelVisibilityService levelVisibilityService,
         EventBus eventBus,
         ISingletonLoader singletonLoader,
+        MapEditorMode mapEditorMode,
         ModRepository modRepository,
         QuickNotificationService notificationService,
         ILoc loc)
@@ -82,6 +86,7 @@ namespace Calloatti.Grid
       _levelVisibilityService = levelVisibilityService;
       _eventBus = eventBus;
       _singletonLoader = singletonLoader;
+      _mapEditorMode = mapEditorMode;
       _modRepository = modRepository;
       _notificationService = notificationService;
       _loc = loc;
@@ -118,7 +123,8 @@ namespace Calloatti.Grid
 
     private void LoadState()
     {
-      if (_singletonLoader.TryGetSingleton(MarkersKey, out IObjectLoader objectLoader) && objectLoader.Has(XsKey))
+      SingletonKey key = _mapEditorMode.IsMapEditor ? MarkersMapKey : MarkersKey;
+      if (_singletonLoader.TryGetSingleton(key, out IObjectLoader objectLoader) && objectLoader.Has(XsKey))
       {
         _loadedXs = objectLoader.Get(XsKey);
         _loadedYs = objectLoader.Get(YsKey);
@@ -128,7 +134,8 @@ namespace Calloatti.Grid
 
     public void Save(ISingletonSaver saver)
     {
-      IObjectSaver objectSaver = saver.GetSingleton(MarkersKey);
+      SingletonKey key = _mapEditorMode.IsMapEditor ? MarkersMapKey : MarkersKey;
+      IObjectSaver objectSaver = saver.GetSingleton(key);
 
       List<int> xs = new List<int>(_activeMarkers.Count);
       List<int> ys = new List<int>(_activeMarkers.Count);

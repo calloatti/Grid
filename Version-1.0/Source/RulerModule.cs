@@ -8,6 +8,7 @@ namespace Calloatti.Grid
   // 1. CONFIGURATOR
   // =========================================================================
   [Context("Game")]
+  [Context("MapEditor")]
   public class RulerConfigurator : Configurator
   {
     protected override void Configure()
