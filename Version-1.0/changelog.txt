@@ -1,3 +1,5 @@
+* Game Version: 1.0.0.0 - Mod Version: 3.10.0
+- Added numbers to vanilla construction guidelines.
 * Game Version: 1.0.0.0 - Mod Version: 3.9.0
 - Marker and Ruler tools are now available in the MapEditor toolbar.
 - Map markers and rulers placed in MapEditor persist in the map file but do not transfer when players start a new game.

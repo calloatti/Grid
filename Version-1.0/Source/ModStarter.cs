@@ -1,4 +1,5 @@
-﻿using Timberborn.ModManagerScene;
+﻿using HarmonyLib;
+using Timberborn.ModManagerScene;
 using Calloatti.Config;
 using UnityEngine;
 
@@ -18,6 +19,8 @@ namespace Calloatti.Grid
       Config = new SimpleConfig(modEnvironment.ModPath);
 
       // The rest of your mod's initialization goes here...
+      var harmony = new Harmony("calloatti.grid");
+      harmony.PatchAll();
     }
   }
 }

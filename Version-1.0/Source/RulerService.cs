@@ -38,7 +38,7 @@ namespace Calloatti.Grid
     public const int RedSquareValue = 1024;
     private const int RULER_LENGTH = 255;
     private const int GRID_COLUMNS = 256;
-    private const int GRID_ROWS = 5;
+    private const int GRID_ROWS = 6;
     private const float HeightOffset = 0.05f;
     private const float SurfaceBaseHeight = 1.00f;
     private const float SliceBaseHeight = 0.85f;

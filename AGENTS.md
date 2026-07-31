@@ -27,6 +27,9 @@ A Timberborn mod that adds grid overlays, water planning tools, markers, and rul
 | `Source/WaterTool*.cs` | Water tools (Planner, Eraser, Rise, Lower, DeleteAll) |
 | `Source/RulerTool*.cs` | Ruler tools (Draw, DeleteAll) |
 | `Source/MarkerTool*.cs` | Marker tools (Place/cycle color, DeleteAll) |
+| `Source/CGModule.cs` | Construction guidelines configurator (DI) |
+| `Source/CGService.cs` | Construction guidelines number overlay — renders distance numbers via pooled quads + atlas UV |
+| `Source/CGPatches.cs` | Harmony postfixes on `AddCoordinatesToGuidelines` + `CrossParameters.Reset()` |
 | `simpleconfig.txt` | Config schema (Grid settings: offsets, colors, highlights) |
 | `manifest.json` | Mod manifest (id, version, game deps) |
 | `Grid.csproj` | SDK-style project, imports `CommonModSettings.props` |
@@ -124,9 +127,107 @@ This ensures:
 - Markers/rulers placed in MapEditor do NOT appear when a player starts a new game from that map ✓
 - Game save/load works as before ✓
 
+## Coordinate System
+
+### Grid ↔ World Mapping (`CoordinateSystem`)
+```csharp
+// Grid (x, y, z) → World (x, z, y)
+GridToWorld(Vector3Int c) => new Vector3(c.x, c.z, c.y);
+WorldToGrid(Vector3 p)    => new Vector3(p.x, p.z, p.y);
+```
+
+| Grid Component | Meaning | Maps To World |
+|---|---|---|
+| `.x` | East-West | `World.x` |
+| `.y` | North-South | `World.z` |
+| `.z` | Height (vertical) | `World.y` |
+
+- `Vector3Int` components: `.x` = east-west, `.y` = north-south, `.z` = height
+- `CrossParameters.Center` is `Vector3Int(x, y, z)` → same mapping
+- To extract grid coords from a tile matrix world position: `gx = (int)worldPos.x`, `gy = (int)worldPos.z` (not `.y`!)
+
+## Construction Guidelines (Game Feature)
+
+### Source
+`ConstructionGuidelinesRenderingService` in `Timberborn.ConstructionGuidelines` (public class).
+
+### How It Works
+- Renders colored tile squares in a cross pattern from the cursor when the `ShowGuidelines` key is held or guidelines are toggled on.
+- Also shown during building placement (via `ConstructionModeGuidelinesShower` → `ConstructionGuidelinesToggle`).
+- Radius is 30 (from `ConstructionGuidelinesSpec`).
+
+### Key Methods
+| Method | Role |
+|---|---|
+| `AddCoordinatesToGuidelines(Vector3 center, IEnumerable<Vector2Int> coords)` | Clears and populates `_tilesAtSameLevel`, `_tilesBelow`, `_tilesAbove` (all `List<Matrix4x4>`) |
+| `GetGuidelinesCoordinates(Vector3 center, Vector2Int min, Vector2Int max)` | Yields cross-arm tile coords, excluding the footprint area (`x < min.x \|\| x > max.x` for horizontal, analogous for vertical) |
+| `GetTilesInsideFootprint(Vector2Int min, Vector2Int max, ...)` | Yields coords inside the bounding box that are NOT occupied by the building (empty spaces in irregular footprints) |
+| `SetPreviewFootprint(...)` / `UpdateBlockObjectPreviewTiles(...)` | Called when a building is selected; provides footprint min/max |
+| `GetGuidelinesFromMousePosition()` | No-building case; adds center tile separately via `_tilesAtSameLevel.Add(CreateMatrix(Center, ...))` AFTER `AddCoordinatesToGuidelines` |
+
+### Tile Lists
+- `_tilesAtSameLevel` — tiles at same elevation as cursor
+- `_tilesBelow` — tiles below cursor elevation
+- `_tilesAbove` — tiles above cursor elevation
+- These are visual categories only; for numbering/overlay purposes, treat as one combined list.
+- Building footprint tiles are **NOT** in the lists (only cross-arm tiles are).
+- Center tile (cursor position) is added separately after `AddCoordinatesToGuidelines` returns.
+
+### Tile Matrix Positions
+`CreateMatrix(Vector3Int coordinates, float markerYOffset)`:
+```
+Matrix4x4.TRS(GridToWorld(coordinates) + new Vector3(0.5f, markerYOffset, 0.5f), Quaternion.identity, Vector3.one)
+```
+Extract world position: `matrix.GetColumn(3)` → Vector3 (world x, world y/height, world z/NS).
+
+### Cross Pattern Structure (No Building)
+When no building is selected: `min == max == center.XY()` (using 2D grid coords).
+- **Horizontal arm** (West/East): tiles at `(x, center.y)` for `x` in `[center.x - radius, center.x + radius]`, excluding center x
+- **Vertical arm** (South/North): tiles at `(center.x, y)` for `y` in `[center.y - radius, center.y + radius]`, excluding center y
+- Center tile added separately (not in `AddCoordinatesToGuidelines` output).
+
+### Cross Pattern Structure (Building Selected)
+When a building is selected: `min/max` define the footprint bounding box.
+- **Horizontal arm**: tiles at `(x, y)` for x outside footprint, y within footprint y-range → width of arm matches footprint height
+- **Vertical arm**: tiles at `(x, y)` for y outside footprint, x within footprint x-range → height of arm matches footprint width
+- Footprint tiles are excluded (only empty spaces within the bounding box are included via `GetTilesInsideFootprint`).
+- Distance from center = `max(|gridX - centerX|, |gridY - centerY|)` — but since tiles are on cardinal axes only, one axis always equals center, so distance = axis difference.
+
+### Cardinal Direction Classification
+For numbering, classify tiles by which arm they're on:
+- **West**: `gridY == centerY && gridX < centerX`
+- **East**: `gridY == centerY && gridX > centerX`
+- **South**: `gridX == centerX && gridY < centerY`
+- **North**: `gridX == centerX && gridY > centerY`
+- **Center**: `gridX == centerX && gridY == centerY` (distance 0, skip for numbering)
+
+### Harmony Patching
+- `CGPatches` postfixes `AddCoordinatesToGuidelines` to capture tile data and populate dot positions.
+- `CGClearPatch` postfixes `CrossParameters.Reset()` to clear dot positions when guidelines hide.
+- `Timberborn.ConstructionGuidelines` must be publicized in `Grid.csproj` (for accessing `CrossParameters` type).
+- `Harmony.PatchAll()` is called in `ModStarter.StartMod()`.
+- Private fields accessed via Harmony `____` parameter injection: `____tilesAtSameLevel`, `____tilesBelow`, `____tilesAbove`, `____lastCrossParameters`.
+
+### CrossParameters
+State holder for the cross pattern, stored in `_lastCrossParameters` on `ConstructionGuidelinesRenderingService`.
+
+| Property | Type | Description |
+|---|---|---|
+| `Center` | `Vector3Int` | Cursor/grid center (grid x, y, z) |
+| `Min` | `Vector2Int` | Footprint bounding box min (2D grid) |
+| `Max` | `Vector2Int` | Footprint bounding box max (2D grid) |
+
+- **No building**: `Min == Max == Center.XY()` (center's x,y as Vector2Int)
+- **Building selected**: `Min`/`Max` define the footprint bounding box
+- `CrossParametersUpdated()` — dirty check, returns `true` only if values actually changed (triggers tile rebuild)
+- `Reset()` — blanks to `-1,-1,-1` when guidelines are hidden; we postfix this to clear dot positions
+- For distance numbering: use `Min`/`Max` to measure distance from footprint **edge**, not from center
+
 ## Key Game API Namespaces
 - `Timberborn.BlockSystem` — `BlockObject`, `IBlockService`, `BlockOccupations`, events
 - `Timberborn.Buildings` — `Building` component
+- `Timberborn.ConstructionGuidelines` — `ConstructionGuidelinesRenderingService`, `CrossParameters`, `ConstructionGuidelinesSpec`
+- `Timberborn.Coordinates` — `CoordinateSystem` (GridToWorld/WorldToGrid)
 - `Timberborn.TerrainSystem` — `ITerrainService`
 - `Timberborn.SingletonSystem` — `EventBus`
 - `Timberborn.ToolSystem` — `ITool`, `ToolService`

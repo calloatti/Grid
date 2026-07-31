@@ -17,8 +17,8 @@ namespace Calloatti.Grid
   public class TopoService : ILoadableSingleton, IPostLoadableSingleton, ILateUpdatableSingleton, IDisposable
   {
     #region Constants & Settings
-    private const int GridColumns = 256;
-    private const int GridRows = 5;
+    private const int GRID_COLUMNS = 256;
+    private const int GRID_ROWS = 6;
     private const int TopoDataRow = 2;
     private const float HeightOffset = 0.05f;
     private const int ChunkSize = 16;
@@ -367,10 +367,10 @@ namespace Calloatti.Grid
       vertices.Add(worldPos + p3);
 
       int spriteIndex = Mathf.Clamp(displayValue, 0, 255);
-      float uMin = (float)spriteIndex / GridColumns;
-      float uMax = (float)(spriteIndex + 1) / GridColumns;
-      float vMax = 1.0f - ((float)TopoDataRow / GridRows);
-      float vMin = 1.0f - ((float)(TopoDataRow + 1) / GridRows);
+      float uMin = (float)spriteIndex / GRID_COLUMNS;
+      float uMax = (float)(spriteIndex + 1) / GRID_COLUMNS;
+      float vMax = 1.0f - ((float)TopoDataRow / GRID_ROWS);
+      float vMin = 1.0f - ((float)(TopoDataRow + 1) / GRID_ROWS);
       uvs.Add(new Vector2(uMin, vMin));
       uvs.Add(new Vector2(uMax, vMin));
       uvs.Add(new Vector2(uMin, vMax));
