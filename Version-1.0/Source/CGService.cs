@@ -24,6 +24,8 @@ namespace Calloatti.Grid
     private readonly CameraService _cameraService;
     private readonly ISpecService _specService;
     private bool _debugLogged;
+    private Quaternion _lastRotation;
+    private readonly List<bool> _active = new List<bool>();
 
     private GameObject _root;
     private Mesh[] _numberMeshes;
@@ -82,7 +84,9 @@ namespace Calloatti.Grid
         _filters.Add(mf);
         _renderers.Add(mr);
         _lastNumber.Add(0);
+        _active.Add(false);
       }
+      _lastRotation = Quaternion.Euler(90, CalculateCameraRotation(), 0);
     }
 
     public void LateUpdateSingleton()
@@ -97,15 +101,38 @@ namespace Calloatti.Grid
                   " tiles=" + Tiles.Count +
                   " rootActive=" + (_root != null ? _root.activeSelf : false));
       }
+
+      int tileCount = Tiles.Count;
+      if (tileCount == 0)
+      {
+        for (int i = 0; i < _active.Count; i++)
+        {
+          if (_active[i])
+          {
+            _active[i] = false;
+            _quads[i].SetActive(false);
+          }
+        }
+        return;
+      }
+
       Quaternion rot = Quaternion.Euler(90, CalculateCameraRotation(), 0);
+      bool rotationChanged = rot != _lastRotation;
+      _lastRotation = rot;
+
       for (int i = 0; i < _quads.Count; i++)
       {
-        if (i < Tiles.Count)
+        if (i < tileCount)
         {
           var (world, distance) = Tiles[i];
-          _quads[i].SetActive(true);
+          if (!_active[i])
+          {
+            _active[i] = true;
+            _quads[i].SetActive(true);
+          }
           _quads[i].transform.position = new Vector3(world.x, world.y + 0.022f, world.z);
-          _quads[i].transform.rotation = rot;
+          if (rotationChanged)
+            _quads[i].transform.rotation = rot;
           if (_lastNumber[i] != distance)
           {
             _lastNumber[i] = distance;
@@ -113,8 +140,9 @@ namespace Calloatti.Grid
             _renderers[i].sharedMaterial = _numberMaterials[distance];
           }
         }
-        else
+        else if (_active[i])
         {
+          _active[i] = false;
           _quads[i].SetActive(false);
           _lastNumber[i] = 0;
         }
@@ -154,8 +182,27 @@ namespace Calloatti.Grid
 
     public void Dispose()
     {
+      if (_numberMaterials != null)
+      {
+        foreach (Material mat in _numberMaterials)
+          if (mat != null) Object.Destroy(mat);
+        _numberMaterials = null;
+      }
+      if (_numberMeshes != null)
+      {
+        foreach (Mesh mesh in _numberMeshes)
+          if (mesh != null) Object.Destroy(mesh);
+        _numberMeshes = null;
+      }
       if (_root != null)
         Object.Destroy(_root);
+      _quads.Clear();
+      _filters.Clear();
+      _renderers.Clear();
+      _lastNumber.Clear();
+      _active.Clear();
+      Tiles.Clear();
+      if (Instance == this) Instance = null;
     }
   }
 }

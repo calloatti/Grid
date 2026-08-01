@@ -8,11 +8,11 @@ namespace Calloatti.Grid
   [HarmonyPatch(typeof(ConstructionGuidelinesRenderingService), "AddCoordinatesToGuidelines")]
   internal static class CGPatches
   {
-    private const string Tag = "[Grid] Guidelines:";
+    private static readonly Dictionary<(int gx, int gy), (int gz, Vector3 world)> _topmost =
+        new Dictionary<(int gx, int gy), (int gz, Vector3 world)>();
 
     [HarmonyPostfix]
     internal static void Postfix(
-        Vector3 center,
         List<Matrix4x4> ____tilesAtSameLevel,
         List<Matrix4x4> ____tilesBelow,
         List<Matrix4x4> ____tilesAbove,
@@ -28,38 +28,32 @@ namespace Calloatti.Grid
       int maxx = ____lastCrossParameters.Max.x;
       int maxy = ____lastCrossParameters.Max.y;
 
-      int rawCount = ____tilesAtSameLevel.Count + ____tilesBelow.Count + ____tilesAbove.Count;
-
-      var topmost = new Dictionary<(int gx, int gy), (int gz, Vector3 world)>();
+      _topmost.Clear();
       foreach (Matrix4x4 m in ____tilesAtSameLevel)
-        InsertTopmost(topmost, m);
+        InsertTopmost(_topmost, m);
       foreach (Matrix4x4 m in ____tilesBelow)
-        InsertTopmost(topmost, m);
+        InsertTopmost(_topmost, m);
       foreach (Matrix4x4 m in ____tilesAbove)
-        InsertTopmost(topmost, m);
+        InsertTopmost(_topmost, m);
 
-      int wCount = 0, eCount = 0, sCount = 0, nCount = 0, offCount = 0;
       svc.Tiles.Clear();
 
-      foreach (var entry in topmost)
+      foreach (var entry in _topmost)
       {
         int gx = entry.Key.gx;
         int gy = entry.Key.gy;
         Vector3 world = entry.Value.world;
 
         int distance = 0;
-        if (gy == cy && gx < cx) { distance = minx - gx; wCount++; }
-        else if (gy == cy && gx > cx) { distance = gx - maxx; eCount++; }
-        else if (gx == cx && gy < cy) { distance = miny - gy; sCount++; }
-        else if (gx == cx && gy > cy) { distance = gy - maxy; nCount++; }
-        else { offCount++; continue; }
+        if (gy == cy && gx < cx) { distance = minx - gx; }
+        else if (gy == cy && gx > cx) { distance = gx - maxx; }
+        else if (gx == cx && gy < cy) { distance = miny - gy; }
+        else if (gx == cx && gy > cy) { distance = gy - maxy; }
+        else continue;
 
         if (distance >= 1 && distance <= svc.MaxNumber)
           svc.Tiles.Add((world, distance));
       }
-
-      Debug.Log($"{Tag} center=({cx},{cy}) raw={rawCount} dup={topmost.Count} " +
-                $"W:{wCount} E:{eCount} S:{sCount} N:{nCount} off={offCount} nums={svc.Tiles.Count}");
     }
 
     private static void InsertTopmost(Dictionary<(int gx, int gy), (int gz, Vector3 world)> dict, Matrix4x4 m)

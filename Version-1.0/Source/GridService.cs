@@ -14,8 +14,6 @@ namespace Calloatti.Grid
 {
   public class GridService : ILoadableSingleton, IPostLoadableSingleton, ILateUpdatableSingleton, IDisposable
   {
-    private const string ModId = "Calloatti.Grid";
-
     private readonly EventBus _eventBus;
     private readonly GridInputService _gridInputService;
     private readonly ITerrainService _terrainService;
@@ -128,18 +126,6 @@ namespace Calloatti.Grid
       {
         Debug.LogError($"{GridConfigurator.Prefix} Failed to load settings from SimpleConfig: {e.Message}");
       }
-    }
-
-    public void ReloadSettings()
-    {
-      EnsureSettingsLoaded();
-      InitializeMaterials();
-    }
-
-    public GridSettings ReadConfigFile()
-    {
-      ReloadSettings();
-      return Settings;
     }
 
     public void ToggleTerrainGrid()

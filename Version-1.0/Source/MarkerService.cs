@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Bindito.Core;
 using Timberborn.BlockSystem;
 using Timberborn.Buildings;
@@ -9,10 +7,8 @@ using Timberborn.Coordinates;
 using Timberborn.LevelVisibilitySystem;
 using Timberborn.Localization;
 using Timberborn.MapStateSystem;
-using Timberborn.Modding;
 using Timberborn.NaturalResources;
 using Timberborn.Persistence;
-using Timberborn.PlatformUtilities;
 using Timberborn.QuickNotificationSystem;
 using Timberborn.Ruins;
 using Timberborn.SingletonSystem;
@@ -26,8 +22,6 @@ namespace Calloatti.Grid
   {
     public static MarkerService Instance { get; private set; }
 
-    private const string ModId = "Calloatti.Grid";
-
     // --- DEPENDENCIES ---
     private readonly ITerrainService _terrainService;
     private readonly IBlockService _blockService;
@@ -35,12 +29,10 @@ namespace Calloatti.Grid
     private readonly EventBus _eventBus;
     private readonly ISingletonLoader _singletonLoader;
     private readonly MapEditorMode _mapEditorMode;
-    private readonly ModRepository _modRepository;
     private readonly QuickNotificationService _notificationService;
     private readonly ILoc _loc;
 
     // --- STATE ---
-    public MarkerSettings Settings { get; private set; } = new MarkerSettings();
     private readonly Dictionary<Vector2Int, MarkerData> _activeMarkers = new Dictionary<Vector2Int, MarkerData>();
 
     // --- OPTIMIZATION BUFFERS ---
@@ -77,7 +69,6 @@ namespace Calloatti.Grid
         EventBus eventBus,
         ISingletonLoader singletonLoader,
         MapEditorMode mapEditorMode,
-        ModRepository modRepository,
         QuickNotificationService notificationService,
         ILoc loc)
     {
@@ -87,7 +78,6 @@ namespace Calloatti.Grid
       _eventBus = eventBus;
       _singletonLoader = singletonLoader;
       _mapEditorMode = mapEditorMode;
-      _modRepository = modRepository;
       _notificationService = notificationService;
       _loc = loc;
       Instance = this;
@@ -99,7 +89,6 @@ namespace Calloatti.Grid
 
     public void Load()
     {
-      EnsureSettingsLoaded();
       LoadState();
     }
 
@@ -163,67 +152,6 @@ namespace Calloatti.Grid
         foreach (var mat in _paletteMaterials) if (mat != null) UnityEngine.Object.Destroy(mat);
       }
       if (_sharedCrossMesh != null) UnityEngine.Object.Destroy(_sharedCrossMesh);
-    }
-
-    // ====================================================================
-    // CONFIGURATION
-    // ====================================================================
-
-    private string GetConfigFilePath()
-    {
-      string localModsFolder = Path.Combine(UserDataFolder.Folder, "Mods");
-      string actualModPath = _modRepository.Mods.FirstOrDefault(m => m.Manifest.Id == ModId)?.ModDirectory.Path;
-
-      if (string.IsNullOrEmpty(actualModPath))
-      {
-        string fallback = Path.Combine(localModsFolder, "Grid");
-        if (!Directory.Exists(fallback)) Directory.CreateDirectory(fallback);
-        return Path.Combine(fallback, "markers.json");
-      }
-
-      string normalizedLocalMods = Path.GetFullPath(localModsFolder).Replace('\\', '/').TrimEnd('/');
-      string normalizedModPath = Path.GetFullPath(actualModPath).Replace('\\', '/').TrimEnd('/');
-
-      if (normalizedModPath.StartsWith(normalizedLocalMods, StringComparison.InvariantCultureIgnoreCase))
-      {
-        return Path.Combine(actualModPath, "markers.json");
-      }
-      else
-      {
-        string workshopConfigFolder = Path.Combine(localModsFolder, "Grid");
-        if (!Directory.Exists(workshopConfigFolder)) Directory.CreateDirectory(workshopConfigFolder);
-        return Path.Combine(workshopConfigFolder, "markers.json");
-      }
-    }
-
-    private void EnsureSettingsLoaded()
-    {
-      try
-      {
-        string filePath = GetConfigFilePath();
-        if (File.Exists(filePath))
-        {
-          string json = File.ReadAllText(filePath);
-          JsonUtility.FromJsonOverwrite(json, Settings);
-        }
-        else
-        {
-          string json = JsonUtility.ToJson(Settings, true);
-          File.WriteAllText(filePath, json);
-          Debug.Log($"[Grid] Created user-friendly config: {filePath}");
-        }
-
-        Settings.InitializeColors();
-      }
-      catch (Exception e)
-      {
-        Debug.LogError($"[Grid] Failed to handle markers.json: {e.Message}");
-      }
-    }
-
-    public void ReloadSettings()
-    {
-      EnsureSettingsLoaded();
     }
 
     // ====================================================================
@@ -368,7 +296,7 @@ namespace Calloatti.Grid
     {
       if (_activeMarkers.TryGetValue(col, out MarkerData data))
       {
-        data.ColorIndex = (data.ColorIndex + 1) % Settings.MarkerPalette.Count;
+        data.ColorIndex = (data.ColorIndex + 1) % MarkerPalette.Colors.Length;
         Material newSharedMat = _paletteMaterials[data.ColorIndex];
 
         foreach (var obj in data.VisualPairs)
@@ -493,11 +421,11 @@ namespace Calloatti.Grid
       if (_sharedCrossMesh == null) _sharedCrossMesh = CreateCrossMesh();
       if (_paletteMaterials == null)
       {
-        _paletteMaterials = new Material[Settings.MarkerPalette.Count];
+        _paletteMaterials = new Material[MarkerPalette.Colors.Length];
         Shader spriteShader = Shader.Find("Sprites/Default");
-        for (int i = 0; i < Settings.MarkerPalette.Count; i++)
+        for (int i = 0; i < MarkerPalette.Colors.Length; i++)
         {
-          _paletteMaterials[i] = new Material(spriteShader) { color = Settings.MarkerPalette[i] };
+          _paletteMaterials[i] = new Material(spriteShader) { color = MarkerPalette.Colors[i] };
         }
       }
     }

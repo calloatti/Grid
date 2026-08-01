@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Bindito.Core;
+﻿using Bindito.Core;
 using Timberborn.InputSystem;
-using Timberborn.Modding;
-using Timberborn.PlatformUtilities;
 using Timberborn.SingletonSystem;
 using UnityEngine;
 
@@ -61,29 +55,20 @@ namespace Calloatti.Grid
   }
 
   // =========================================================================
-  // 3. SETTINGS DATA
+  // 3. FIXED COLOR PALETTE
   // =========================================================================
-  [Serializable]
-  public class MarkerSettings
+  public static class MarkerPalette
   {
-    public List<string> MarkerPaletteHex = new List<string>
+    public static readonly Color[] Colors =
     {
-        "#FF8C00", "#0073FF", "#1AE61A", "#F21A80",
-        "#FFF200", "#00F2F2", "#9933FF", "#FFFFFF"
+      new Color(1.00f, 0.55f, 0.00f), // #FF8C00
+      new Color(0.00f, 0.45f, 1.00f), // #0073FF
+      new Color(0.10f, 0.90f, 0.10f), // #1AE61A
+      new Color(0.95f, 0.10f, 0.50f), // #F21A80
+      new Color(1.00f, 0.95f, 0.00f), // #FFF200
+      new Color(0.00f, 0.95f, 0.95f), // #00F2F2
+      new Color(0.60f, 0.20f, 1.00f), // #9933FF
+      new Color(1.00f, 1.00f, 1.00f)  // #FFFFFF
     };
-
-    [NonSerialized] public List<Color> MarkerPalette = new List<Color>();
-
-    public void InitializeColors()
-    {
-      MarkerPalette = MarkerPaletteHex.Select(HexToColor).ToList();
-    }
-
-    private Color HexToColor(string hex)
-    {
-      if (ColorUtility.TryParseHtmlString(hex, out Color color))
-        return color;
-      return Color.white;
-    }
   }
 }

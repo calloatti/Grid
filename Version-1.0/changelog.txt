@@ -1,3 +1,5 @@
+* Game Version: 1.0.0.0 - Mod Version: 3.11.0
+- Performance improvements to construction guideline numbers; fixed marker color palette.
 * Game Version: 1.0.0.0 - Mod Version: 3.10.0
 - Added numbers to vanilla construction guidelines.
 * Game Version: 1.0.0.0 - Mod Version: 3.9.0
