@@ -36,6 +36,7 @@ namespace Calloatti.Grid
 
     // --- CONSTANTS ---
     public const int RedSquareValue = 1024;
+    private const int CircleAtlasIndex = 0;
     private const int RULER_LENGTH = 255;
     private const int GRID_COLUMNS = 256;
     private const int GRID_ROWS = 6;
@@ -67,6 +68,8 @@ namespace Calloatti.Grid
     private bool _isDrawing = false;
     private Vector3Int _startCoords;
     private int _drawingType = 0;
+
+    public bool ForceCircle { get; set; }
 
     // --- LOADED DATA ---
     private List<Vector3Int> _loadedStarts;
@@ -244,6 +247,7 @@ namespace Calloatti.Grid
     {
       bool ctrl = Keyboard.current != null && Keyboard.current.ctrlKey.isPressed;
       bool shift = Keyboard.current != null && Keyboard.current.shiftKey.isPressed;
+      bool alt = IsAltPressed() || ForceCircle;
 
       if (!_isDrawing)
       {
@@ -256,9 +260,7 @@ namespace Calloatti.Grid
           {
             if (shift)
             {
-              CleanupOverlapForRuler(r);
-              Object.Destroy(r.Container);
-              _activeRulers.RemoveAt(i);
+              DeleteRulerAt(clickCoords);
               return;
             }
             if (ctrl)
@@ -345,15 +347,39 @@ namespace Calloatti.Grid
       }
       else
       {
-        InternalFinalizeRuler(_startCoords, clickCoords, _lockedRotation, null, 0, 0, 0);
+        if (alt)
+        {
+          InternalFinalizeCircleRuler(_startCoords, clickCoords, _lockedRotation);
+        }
+        else
+        {
+          InternalFinalizeRuler(_startCoords, clickCoords, _lockedRotation, null, 0, 0, 0);
+        }
         _isDrawing = false;
         _drawingType = 0;
       }
     }
 
-    public void HandleMouseMove(Vector3Int c) { if (_isDrawing) InternalUpdatePreview(_startCoords, c); }
+    public void HandleMouseMove(Vector3Int c) { if (_isDrawing) InternalUpdatePreview(_startCoords, c, IsAltPressed() || ForceCircle); }
 
     public void CancelOperation() { _isDrawing = false; _drawingType = 0; if (_previewContainer != null) _previewContainer.SetActive(false); }
+
+    public void DeleteRulerAt(Vector3Int clickCoords)
+    {
+      Vector2Int c2d = new Vector2Int(clickCoords.x, clickCoords.y);
+
+      for (int i = _activeRulers.Count - 1; i >= 0; i--)
+      {
+        var r = _activeRulers[i];
+        if (r.Segments.Any(seg => seg.Coords == c2d))
+        {
+          CleanupOverlapForRuler(r);
+          Object.Destroy(r.Container);
+          _activeRulers.RemoveAt(i);
+          return;
+        }
+      }
+    }
 
     public void DeleteAllRulers()
     {
@@ -402,8 +428,13 @@ namespace Calloatti.Grid
       _previewContainer.SetActive(true);
     }
 
-    private void InternalUpdatePreview(Vector3Int start, Vector3Int end)
+    private void InternalUpdatePreview(Vector3Int start, Vector3Int end, bool altPressed)
     {
+      if (altPressed)
+      {
+        InternalUpdatePreviewCircle(start, end);
+        return;
+      }
       Vector2Int step = GetStepDirection(start, end);
       int maxV = _levelVisibilityService.MaxVisibleLevel;
       for (int i = 0; i < RULER_LENGTH; i++)
@@ -413,6 +444,47 @@ namespace Calloatti.Grid
         q.SetActive(true);
         UpdateQuadHeight(q, tile, maxV, _drawingType, i + 1);
       }
+    }
+
+    private void InternalUpdatePreviewCircle(Vector3Int center, Vector3Int current)
+    {
+      int radius = Mathf.Max(Mathf.Abs(current.x - center.x), Mathf.Abs(current.y - center.y));
+      int maxV = _levelVisibilityService.MaxVisibleLevel;
+      int idx = 0;
+      int diameter = 2 * radius + 1;
+
+       foreach (var tile in GetCircleTiles(center, radius))
+       {
+         if (idx >= RULER_LENGTH) break;
+         if (!_terrainService.Contains(tile)) continue;
+         _previewQuads[idx].SetActive(true);
+         UpdateQuadHeight(_previewQuads[idx], tile, maxV, 0, CircleAtlasIndex);
+         idx++;
+       }
+
+       for (int i = 0; i < diameter && idx < RULER_LENGTH; i++)
+       {
+         Vector2Int tile = new Vector2Int(center.x - radius + i, center.y);
+         if (!_terrainService.Contains(tile)) continue;
+         _previewQuads[idx].SetActive(true);
+         UpdateQuadHeight(_previewQuads[idx], tile, maxV, 0, i + 1);
+         idx++;
+       }
+
+       for (int i = 0; i < diameter && idx < RULER_LENGTH; i++)
+       {
+         Vector2Int tile = new Vector2Int(center.x, center.y - radius + i);
+         if (tile.y == center.y) continue;
+         if (!_terrainService.Contains(tile)) continue;
+         _previewQuads[idx].SetActive(true);
+         UpdateQuadHeight(_previewQuads[idx], tile, maxV, 0, i + 1);
+         idx++;
+       }
+
+       for (int i = idx; i < RULER_LENGTH; i++)
+       {
+         _previewQuads[i].SetActive(false);
+       }
     }
 
     private void InternalFinalizeRuler(Vector3Int start, Vector3Int end, Quaternion rotation, List<int> explicitValues, int rType, int rPeriod, int rGap)
@@ -450,6 +522,97 @@ namespace Calloatti.Grid
         RegisterOverlap(tile, seg);
       }
       _activeRulers.Add(instance);
+    }
+
+    private void InternalFinalizeCircleRuler(Vector3Int center, Vector3Int current, Quaternion rotation)
+    {
+      if (_previewContainer != null) _previewContainer.SetActive(false);
+      int radius = Mathf.Max(Mathf.Abs(current.x - center.x), Mathf.Abs(current.y - center.y));
+
+      GameObject container = new GameObject("ActiveRuler");
+      container.SetActive(_rulersVisible);
+      var instance = new RulerInstance { Container = container, Segments = new List<RulerSegment>(), Start = center, Rotation = rotation, RulerType = 0, Period = 0, GapSize = 0 };
+      instance.End = center;
+      int maxV = _levelVisibilityService.MaxVisibleLevel;
+      int diameter = 2 * radius + 1;
+
+       foreach (var tile in GetCircleTiles(center, radius))
+       {
+         if (!_terrainService.Contains(tile)) continue;
+         GameObject quad = CreateRulerQuad(container.transform, rotation);
+         var seg = new RulerSegment { Obj = quad, Coords = tile, Value = CircleAtlasIndex, Ruler = instance };
+         UpdateQuadHeight(quad, tile, maxV, instance.RulerType, CircleAtlasIndex);
+         instance.Segments.Add(seg);
+         RegisterOverlap(tile, seg);
+       }
+
+       for (int i = 0; i < diameter; i++)
+       {
+         Vector2Int tile = new Vector2Int(center.x - radius + i, center.y);
+         if (!_terrainService.Contains(tile)) continue;
+         GameObject quad = CreateRulerQuad(container.transform, rotation);
+         var seg = new RulerSegment { Obj = quad, Coords = tile, Value = i + 1, Ruler = instance };
+         UpdateQuadHeight(quad, tile, maxV, instance.RulerType, i + 1);
+         instance.Segments.Add(seg);
+         RegisterOverlap(tile, seg);
+       }
+
+       for (int i = 0; i < diameter; i++)
+       {
+         Vector2Int tile = new Vector2Int(center.x, center.y - radius + i);
+         if (tile.y == center.y) continue;
+         if (!_terrainService.Contains(tile)) continue;
+         GameObject quad = CreateRulerQuad(container.transform, rotation);
+         var seg = new RulerSegment { Obj = quad, Coords = tile, Value = i + 1, Ruler = instance };
+         UpdateQuadHeight(quad, tile, maxV, instance.RulerType, i + 1);
+         instance.Segments.Add(seg);
+         RegisterOverlap(tile, seg);
+       }
+
+      _activeRulers.Add(instance);
+    }
+
+    private List<Vector2Int> GetCircleTiles(Vector3Int center, int radius)
+    {
+      List<Vector2Int> tiles = new List<Vector2Int>();
+      if (radius <= 0)
+      {
+        tiles.Add(new Vector2Int(center.x, center.y));
+        return tiles;
+      }
+      float outerRSq = (radius + 0.5f) * (radius + 0.5f);
+      HashSet<Vector2Int> filled = new HashSet<Vector2Int>();
+      for (int dy = -radius - 1; dy <= radius + 1; dy++)
+      {
+        for (int dx = -radius - 1; dx <= radius + 1; dx++)
+        {
+          if ((float)dx * dx + (float)dy * dy <= outerRSq)
+          {
+            filled.Add(new Vector2Int(center.x + dx, center.y + dy));
+          }
+        }
+      }
+      int[] dirs = { -1, 0, 1 };
+      foreach (var tile in filled)
+      {
+        int dx = tile.x - center.x;
+        int dy = tile.y - center.y;
+        if ((dx == 0 && Mathf.Abs(dy) == radius) || (dy == 0 && Mathf.Abs(dx) == radius)) continue;
+        bool isBorder = false;
+        for (int i = 0; i < 3 && !isBorder; i++)
+        {
+          for (int j = 0; j < 3 && !isBorder; j++)
+          {
+            if (dirs[i] == 0 && dirs[j] == 0) continue;
+            if (!filled.Contains(new Vector2Int(tile.x + dirs[i], tile.y + dirs[j])))
+            {
+              isBorder = true;
+            }
+          }
+        }
+        if (isBorder) tiles.Add(tile);
+      }
+      return tiles;
     }
 
     private GameObject CreateRulerQuad(Transform parent, Quaternion rotation)
@@ -518,6 +681,8 @@ namespace Calloatti.Grid
       int dx = e.x - s.x, dy = e.y - s.y;
       return Mathf.Abs(dx) >= Mathf.Abs(dy) ? new Vector2Int(dx >= 0 ? 1 : -1, 0) : new Vector2Int(0, dy >= 0 ? 1 : -1);
     }
+
+    private bool IsAltPressed() => Keyboard.current != null && Keyboard.current.altKey.isPressed;
 
     private Quaternion CalculateCameraRotation()
     {

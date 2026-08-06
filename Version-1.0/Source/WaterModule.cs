@@ -18,7 +18,7 @@ namespace Calloatti.Grid
 
       // UI Tools (Renamed for alphabetical sorting)
       Bind<WaterToolPlanner>().AsSingleton();
-      Bind<WaterToolEraser>().AsSingleton();
+      Bind<WaterToolClear>().AsSingleton();
       Bind<WaterToolRise>().AsSingleton();
       Bind<WaterToolLower>().AsSingleton();
       Bind<WaterToolDeleteAll>().AsSingleton();

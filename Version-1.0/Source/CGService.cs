@@ -17,14 +17,14 @@ namespace Calloatti.Grid
     private const int GRID_COLUMNS = 256;
     private const int GRID_ROWS = 6;
     private const int NUMBER_ROW = 5;
-    private const float FADE_START_ALPHA = 0.4f;
+    private const float FADE_START_ALPHA = 0.6f;
     private const int FADE_COUNT = 6;
 
     private readonly IAssetLoader _assetLoader;
     private readonly CameraService _cameraService;
     private readonly ISpecService _specService;
     private bool _debugLogged;
-    private Quaternion _lastRotation;
+    private Quaternion? _lastRotation = null;
     private readonly List<bool> _active = new List<bool>();
 
     private GameObject _root;
@@ -86,7 +86,6 @@ namespace Calloatti.Grid
         _lastNumber.Add(0);
         _active.Add(false);
       }
-      _lastRotation = Quaternion.Euler(90, CalculateCameraRotation(), 0);
     }
 
     public void LateUpdateSingleton()
@@ -117,7 +116,7 @@ namespace Calloatti.Grid
       }
 
       Quaternion rot = Quaternion.Euler(90, CalculateCameraRotation(), 0);
-      bool rotationChanged = rot != _lastRotation;
+      bool rotationChanged = _lastRotation == null || rot != _lastRotation.Value;
       _lastRotation = rot;
 
       for (int i = 0; i < _quads.Count; i++)

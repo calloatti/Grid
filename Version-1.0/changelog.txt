@@ -1,3 +1,10 @@
+* Game Version: 1.0.0.0 - Mod Version: 3.13.0
+- Added circle ruler tool button to the toolbar
+- Added Clear Markers and Clear Rulers tools
+- Reordered toolbar buttons
+* Game Version: 1.0.0.0 - Mod Version: 3.12.0
+- Added circle ruler tool (ALT+click while placing a ruler)
+- Removed shadows from numbers in construction guidelines, changed alpha
 * Game Version: 1.0.0.0 - Mod Version: 3.11.0
 - Performance improvements to construction guideline numbers; fixed marker color palette.
 * Game Version: 1.0.0.0 - Mod Version: 3.10.0

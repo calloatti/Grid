@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using Timberborn.AreaSelectionSystemUI;
 using Timberborn.AssetSystem;
 using Timberborn.BottomBarSystem;
@@ -6,8 +7,11 @@ using Timberborn.CursorToolSystem;
 using Timberborn.InputSystem;
 using Timberborn.Localization;
 using Timberborn.SelectionSystem;
+using Timberborn.SingletonSystem;
 using Timberborn.ToolButtonSystem;
 using Timberborn.ToolSystem;
+using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Calloatti.Grid
 {
@@ -24,18 +28,27 @@ namespace Calloatti.Grid
     private readonly IAssetLoader _assetLoader;
     private readonly ILoc _loc;
     private readonly AreaHighlightingService _areaHighlightingService;
+    private readonly EventBus _eventBus;
+
+    // --- CUSTOM BACKGROUNDS ---
+    private readonly Dictionary<ITool, (VisualElement Background, Sprite CustomSprite)> _customBackgrounds =
+        new Dictionary<ITool, (VisualElement Background, Sprite CustomSprite)>();
+    private Sprite _activeBackgroundSprite;
 
     // --- MARKER TOOLS ---
     private readonly MarkerService _markerService;
     private readonly MarkerToolDeleteAll _markerToolDeleteAll;
+    private readonly MarkerToolClear _markerToolClear;
 
     // --- RULER TOOLS ---
     private readonly RulerTool _rulerTool;
     private readonly RulerToolDeleteAll _rulerToolDeleteAll;
+    private readonly RulerToolClear _rulerToolClear;
+    private readonly RulerCircleTool _rulerCircleTool;
 
     // --- WATER TOOLS ---
     private readonly WaterToolPlanner _waterToolPlanner;
-    private readonly WaterToolEraser _waterToolEraser;
+    private readonly WaterToolClear _waterToolClear;
     private readonly WaterToolDeleteAll _waterToolDeleteAll;
     private readonly WaterToolRise _waterToolRise;
     private readonly WaterToolLower _waterToolLower;
@@ -49,12 +62,16 @@ namespace Calloatti.Grid
         IAssetLoader assetLoader,
         ILoc loc,
         AreaHighlightingService areaHighlightingService,
+        EventBus eventBus,
         MarkerService markerService,
         MarkerToolDeleteAll markerToolDeleteAll,
+        MarkerToolClear markerToolClear,
         RulerTool rulerTool,
         RulerToolDeleteAll rulerToolDeleteAll,
+        RulerToolClear rulerToolClear,
+        RulerCircleTool rulerCircleTool,
         WaterToolPlanner waterToolPlanner,
-        WaterToolEraser waterToolEraser,
+        WaterToolClear waterToolClear,
         WaterToolDeleteAll waterToolDeleteAll,
         WaterToolRise waterToolRise,
         WaterToolLower waterToolLower)
@@ -67,15 +84,20 @@ namespace Calloatti.Grid
       _assetLoader = assetLoader;
       _loc = loc;
       _areaHighlightingService = areaHighlightingService;
+      _eventBus = eventBus;
+      _eventBus.Register(this);
 
       _markerService = markerService;
       _markerToolDeleteAll = markerToolDeleteAll;
+      _markerToolClear = markerToolClear;
 
       _rulerTool = rulerTool;
       _rulerToolDeleteAll = rulerToolDeleteAll;
+      _rulerToolClear = rulerToolClear;
+      _rulerCircleTool = rulerCircleTool;
 
       _waterToolPlanner = waterToolPlanner;
-      _waterToolEraser = waterToolEraser;
+      _waterToolClear = waterToolClear;
       _waterToolDeleteAll = waterToolDeleteAll;
       _waterToolRise = waterToolRise;
       _waterToolLower = waterToolLower;
@@ -93,11 +115,45 @@ namespace Calloatti.Grid
       yield return BottomBarElement.CreateMultiLevel(toolGroupButton.Root, toolGroupButton.ToolButtonsElement);
     }
 
-    private void AddToolButton(ITool tool, string imageName, ToolGroupSpec toolGroup, ToolGroupButton toolGroupButton)
+    private void AddToolButton(ITool tool, string imageName, ToolGroupSpec toolGroup, ToolGroupButton toolGroupButton, string backgroundImageName = null)
     {
       ToolButton button = _toolButtonFactory.Create(tool, imageName, toolGroupButton.ToolButtonsElement);
+      if (backgroundImageName != null)
+      {
+        Sprite background = _assetLoader.Load<Sprite>(Path.Combine("Sprites/BottomBar", backgroundImageName));
+        VisualElement backgroundElement = button.Root.Q<VisualElement>("Background");
+        backgroundElement.style.backgroundImage = new StyleBackground(background);
+        _customBackgrounds[tool] = (backgroundElement, background);
+      }
       toolGroupButton.AddTool(button);
       _toolGroupService.AssignToGroup(toolGroup, tool);
+    }
+
+    [OnEvent]
+    public void OnToolEntered(ToolEnteredEvent toolEnteredEvent)
+    {
+      if (_customBackgrounds.TryGetValue(toolEnteredEvent.Tool, out var entry))
+      {
+        entry.Background.style.backgroundImage = new StyleBackground(GetActiveBackgroundSprite());
+      }
+    }
+
+    [OnEvent]
+    public void OnToolExited(ToolExitedEvent toolExitedEvent)
+    {
+      if (_customBackgrounds.TryGetValue(toolExitedEvent.Tool, out var entry))
+      {
+        entry.Background.style.backgroundImage = new StyleBackground(entry.CustomSprite);
+      }
+    }
+
+    private Sprite GetActiveBackgroundSprite()
+    {
+      if (_activeBackgroundSprite == null)
+      {
+        _activeBackgroundSprite = _assetLoader.Load<Sprite>("UI/Images/BottomBar/subbutton-bg-02");
+      }
+      return _activeBackgroundSprite;
     }
 
     // ====================================================================
@@ -111,6 +167,7 @@ namespace Calloatti.Grid
         AddToolButton(colorTool, $"map-marker-cross-{i}", toolGroup, toolGroupButton);
       }
 
+      AddToolButton(_markerToolClear, "CancelToolIcon", toolGroup, toolGroupButton);
       AddToolButton(_markerToolDeleteAll, "trash", toolGroup, toolGroupButton);
     }
 
@@ -119,8 +176,10 @@ namespace Calloatti.Grid
     // ====================================================================
     private void AddRulerTools(ToolGroupSpec toolGroup, ToolGroupButton toolGroupButton)
     {
-      AddToolButton(_rulerTool, "ruler-button", toolGroup, toolGroupButton);
-      AddToolButton(_rulerToolDeleteAll, "trash", toolGroup, toolGroupButton);
+      AddToolButton(_rulerTool, "ruler-button", toolGroup, toolGroupButton, "subbutton-bg-ruler");
+      AddToolButton(_rulerCircleTool, "ruler-circle", toolGroup, toolGroupButton, "subbutton-bg-ruler");
+      AddToolButton(_rulerToolClear, "CancelToolIcon", toolGroup, toolGroupButton, "subbutton-bg-ruler");
+      AddToolButton(_rulerToolDeleteAll, "trash", toolGroup, toolGroupButton, "subbutton-bg-ruler");
     }
 
     // ====================================================================
@@ -128,11 +187,11 @@ namespace Calloatti.Grid
     // ====================================================================
     private void AddWaterTools(ToolGroupSpec toolGroup, ToolGroupButton toolGroupButton)
     {
-      AddToolButton(_waterToolPlanner, "water", toolGroup, toolGroupButton);
-      AddToolButton(_waterToolEraser, "CancelToolIcon", toolGroup, toolGroupButton);
-      AddToolButton(_waterToolRise, "water-rise", toolGroup, toolGroupButton);
-      AddToolButton(_waterToolLower, "water-lower", toolGroup, toolGroupButton);
-      AddToolButton(_waterToolDeleteAll, "trash", toolGroup, toolGroupButton);
+      AddToolButton(_waterToolPlanner, "water", toolGroup, toolGroupButton, "subbutton-bg-water");
+      AddToolButton(_waterToolRise, "water-rise", toolGroup, toolGroupButton, "subbutton-bg-water");
+      AddToolButton(_waterToolLower, "water-lower", toolGroup, toolGroupButton, "subbutton-bg-water");
+      AddToolButton(_waterToolClear, "CancelToolIcon", toolGroup, toolGroupButton, "subbutton-bg-water");
+      AddToolButton(_waterToolDeleteAll, "trash", toolGroup, toolGroupButton, "subbutton-bg-water");
     }
   }
 }

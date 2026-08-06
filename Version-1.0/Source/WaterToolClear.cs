@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace Calloatti.Grid
 {
-  public class WaterToolEraser : ITool, IToolDescriptor, ILoadableSingleton
+  public class WaterToolClear : ITool, IToolDescriptor, ILoadableSingleton
   {
     private readonly WaterPlannedArea _waterPlannedArea;
     private readonly TerrainAreaService _terrainAreaService;
@@ -23,7 +23,7 @@ namespace Calloatti.Grid
     private SelectionToolProcessor _selectionToolProcessor;
     private readonly Color _previewColor = new Color(1.0f, 1.0f, 0.0f, 0.9f);
 
-    public WaterToolEraser(
+    public WaterToolClear(
         WaterPlannedArea waterPlannedArea,
         TerrainAreaService terrainAreaService,
         AreaHighlightingService areaHighlightingService,
@@ -39,7 +39,7 @@ namespace Calloatti.Grid
 
     public void Load()
     {
-      _selectionToolProcessor = _selectionToolProcessorFactory.Create(OnPreview, OnAction, OnShowNone, "WaterPlannerCursor");
+      _selectionToolProcessor = _selectionToolProcessorFactory.Create(OnPreview, OnAction, OnShowNone, "CancelCursor");
     }
 
     public void Enter() => _selectionToolProcessor.Enter();
@@ -72,8 +72,8 @@ namespace Calloatti.Grid
 
     public ToolDescription DescribeTool()
     {
-      return new ToolDescription.Builder(_loc.T("Calloatti.Grid.WaterEraserToolTitle"))
-          .AddSection(_loc.T("Calloatti.Grid.WaterEraserToolDescription"))
+      return new ToolDescription.Builder(_loc.T("Calloatti.Grid.ClearWaterToolTitle"))
+          .AddSection(_loc.T("Calloatti.Grid.ClearWaterToolDescription"))
           .Build();
     }
   }

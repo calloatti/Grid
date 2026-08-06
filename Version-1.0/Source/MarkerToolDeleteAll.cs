@@ -26,8 +26,8 @@ namespace Calloatti.Grid
 
     public ToolDescription DescribeTool()
     {
-      return new ToolDescription.Builder(_loc.T("Calloatti.Grid.DeleteAllTitle"))
-          .AddSection(_loc.T("Calloatti.Grid.DeleteAllDescription"))
+      return new ToolDescription.Builder(_loc.T("Calloatti.Grid.DeleteAllMarkersTitle"))
+          .AddSection(_loc.T("Calloatti.Grid.DeleteAllMarkersDescription"))
           .Build();
     }
 

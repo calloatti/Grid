@@ -22,6 +22,8 @@ namespace Calloatti.Grid
       // Tools
       Bind<RulerTool>().AsSingleton();
       Bind<RulerToolDeleteAll>().AsSingleton();
+      Bind<RulerToolClear>().AsSingleton();
+      Bind<RulerCircleTool>().AsSingleton();
     }
   }
 

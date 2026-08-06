@@ -22,6 +22,7 @@ namespace Calloatti.Grid
 
       // Tools (Note: Renamed to MarkerToolDeleteAll)
       Bind<MarkerToolDeleteAll>().AsSingleton();
+      Bind<MarkerToolClear>().AsSingleton();
     }
   }
 

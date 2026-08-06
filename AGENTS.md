@@ -18,15 +18,18 @@ A Timberborn mod that adds grid overlays, water planning tools, markers, and rul
 | `Source/TopoService.cs` | Height-map visualization using sprite atlas + chunked meshes |
 | `Source/WaterModule.cs` | Water planner configurator & events |
 | `Source/WaterService.cs` | Water planned areas, moisture spread simulation (BFS), visualizers |
-| `Source/MarkerModule.cs` | Marker configurator, input service, settings |
-| `Source/MarkerService.cs` | Colored cross markers on columns, save/load persistence |
-| `Source/RulerModule.cs` | Ruler configurator & input service |
-| `Source/RulerService.cs` | Ruler segments, overlap management, sprite-based display |
+| `Source/MarkerModule.cs` | Marker configurator, input service, settings (binds `MarkerTool`, `MarkerToolClear`, `MarkerToolDeleteAll`) |
+| `Source/MarkerService.cs` | Colored cross markers on columns, save/load persistence, `DeleteMarker(Vector3Int)` |
+| `Source/RulerModule.cs` | Ruler configurator & input service (binds `RulerTool`, `RulerCircleTool`, `RulerToolClear`, `RulerToolDeleteAll`) |
+| `Source/RulerService.cs` | Ruler segments, overlap management, sprite-based display, `ForceCircle`, `DeleteRulerAt(Vector3Int)` |
 | `Source/BottomBarConfigurator.cs` | Registers `BottomBarButtonGroup` as `BottomBarModule` provider |
 | `Source/BottomBarButtonGroup.cs` | Tool group UI — Marker, Ruler, Water tools via `ToolButtonFactory` |
 | `Source/WaterTool*.cs` | Water tools (Planner, Eraser, Rise, Lower, DeleteAll) |
-| `Source/RulerTool*.cs` | Ruler tools (Draw, DeleteAll) |
-| `Source/MarkerTool*.cs` | Marker tools (Place/cycle color, DeleteAll) |
+| `Source/RulerTool*.cs` | Ruler tools (Draw, Circle, Clear, DeleteAll) |
+| `Source/MarkerTool*.cs` | Marker tools (Place/cycle color, Clear, DeleteAll) |
+| `Source/RulerCircleTool.cs` | Circle ruler tool — sets `RulerService.ForceCircle = true` on Enter, mirrors `RulerTool` input |
+| `Source/RulerToolClear.cs` | Clear Rulers tool — click a ruler to delete it via `RulerService.DeleteRulerAt()` |
+| `Source/MarkerToolClear.cs` | Clear Markers tool — click a marker to delete it via `MarkerService.DeleteMarker()` |
 | `Source/CGModule.cs` | Construction guidelines configurator (DI) |
 | `Source/CGService.cs` | Construction guidelines number overlay — renders distance numbers via pooled quads + atlas UV |
 | `Source/CGPatches.cs` | Harmony postfixes on `AddCoordinatesToGuidelines` + `CrossParameters.Reset()` |
@@ -228,6 +231,8 @@ State holder for the cross pattern, stored in `_lastCrossParameters` on `Constru
 - `Timberborn.Buildings` — `Building` component
 - `Timberborn.ConstructionGuidelines` — `ConstructionGuidelinesRenderingService`, `CrossParameters`, `ConstructionGuidelinesSpec`
 - `Timberborn.Coordinates` — `CoordinateSystem` (GridToWorld/WorldToGrid)
+- `Timberborn.InputSystem` — `CursorService` (custom-cursor specs), `InputService`
+- `Timberborn.SelectionToolSystem` — `SelectionToolProcessor`/`SelectionToolProcessorFactory` (drag tools, cursor by blueprint ID)
 - `Timberborn.TerrainSystem` — `ITerrainService`
 - `Timberborn.SingletonSystem` — `EventBus`
 - `Timberborn.ToolSystem` — `ITool`, `ToolService`
@@ -248,3 +253,50 @@ State holder for the cross pattern, stored in `_lastCrossParameters` on `Constru
 - **No commits** unless explicitly requested
 - **Single-letter local variable names** acceptable in tight loops
 - **Local functions** used for inline helpers in rendering code
+
+## Cursor Handling (Two Mechanisms)
+
+**Code method (click-based tools — no blueprint needed):** `MarkerTool`, `RulerTool`, `WaterToolRise/Lower`, `MarkerToolClear`, `RulerToolClear`, `RulerCircleTool` load the texture directly via `IAssetLoader.Load<Texture2D>("Resources/ui/cursors/<name>")` and set it with Unity's `Cursor.SetCursor(_cursor, hotspot, CursorMode.Auto)` in `Enter()` / `null` in `Exit()`. The path is just an asset path; blueprint JSON not involved.
+
+**Blueprint method (drag-based water tools — blueprint required):** `WaterToolPlanner`/`WaterToolEraser` use `SelectionToolProcessorFactory.Create(..., cursorId)`. `SelectionToolProcessor.Enter()` calls `CursorService.SetCursor(id)`, which does `_cursorSpecs[id]` dictionary lookup built from `CustomCursorSpec` blueprints (Timberborn.InputSystem.cs) — missing ID throws `KeyNotFoundException`. The eraser uses the vanilla `"CancelCursor"` spec (already in game; no custom blueprint needed).
+
+**Vanilla cursor reuse (no added assets):** All clear tools use the game's built-in cancel cursor. Click-based tools (`MarkerToolClear`, `RulerToolClear`) load the vanilla texture directly via `IAssetLoader.Load<Texture2D>("UI/Cursors/CancelCursorLarge")` (resolved by `ResourceAssetProvider` → `Resources.Load`). The eraser passes the vanilla spec ID `"CancelCursor"`. Do NOT add custom cursor blueprints/PNGs for cursors that already exist in the game.
+
+## Shared Delete Logic (No Duplication)
+
+Single-marker/single-ruler deletion is implemented once in each service and shared by both the in-tool hotkey branch and the Clear tool:
+- `MarkerService.DeleteMarker(Vector3Int)` — used by `MarkerTool` shift-click and `MarkerToolClear`
+- `RulerService.DeleteRulerAt(Vector3Int)` — used by `RulerTool` shift-click (`HandleClick`) and `RulerToolClear`
+
+## Circle Ruler Feature
+
+### Implementation
+- **ALT+click** while placing a ruler creates a circle ruler with center at the start tile and radius = current tile distance
+- **Circle ruler tool** (`Source/RulerCircleTool.cs`) sets `RulerService.ForceCircle = true` on `Enter()` / `false` on `Exit()`, then mirrors `RulerTool` click/move input so no ALT key is needed
+- `RulerService.ForceCircle` is OR'd with `IsAltPressed()` in `HandleClick`/`HandleMouseMove` (no ALT = normal ruler, ALT or ForceCircle = circle)
+- Circle preview uses atlas index 0 (empty square)
+- Diameter line shows numbered ticks (1..diameter) including axis endpoints
+- Circle outline skips the 4 cardinal axis endpoints (diameter line handles those)
+- File: `Source/RulerService.cs`
+
+### Circle Algorithm (matches donatstudios.com reference)
+The algorithm that matches the donatstudios.com Pixel Circle Generator SVG output:
+1. Build a filled circle using the **pixel-center method** with radius `r+0.5`: a tile at offset `(dx,dy)` from center is inside the filled region if `dx²+dy² ≤ (r+0.5)²`
+2. The circle outline is the **8-connected border** of this filled region: tiles that have at least one 8-neighbor outside the filled region
+3. Skip the 4 cardinal axis endpoints from the circle tiles (the diameter line handles those with numbers)
+
+This produces exactly `8*r` tiles for radius `r`, matching the SVG reference files in `.scratch/`.
+
+### Key Code
+```csharp
+// GetCircleTiles in RulerService.cs
+float outerRSq = (radius + 0.5f) * (radius + 0.5f);
+// Fill: dx*dx + dy*dy <= outerRSq
+// Border: at least one 8-neighbor outside the filled set
+// Skip cardinal endpoints: (dx==0 && |dy|==radius) || (dy==0 && |dx|==radius)
+```
+
+### SVG Validation
+Reference SVG files from donatstudios.com are in `.scratch/` (e.g., `Circle-7x7-download.svg`).
+SVG parsing: use independent regex for each attribute (`data-x`, `data-y`, `fill`) rather than assuming attribute order.
+Convert absolute SVG coordinates to relative by subtracting the center offset `(radius, radius)`.
