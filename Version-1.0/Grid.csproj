@@ -1,14 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <AssemblyName>grid</AssemblyName>
     <RootNamespace>Calloatti.Grid</RootNamespace>
+    <TimberbornPath>C:\Program Files (x86)\Steam\steamapps\common\timberborn_main\Timberborn_Data\Managed</TimberbornPath>
   </PropertyGroup>
 
   <Import Project="CommonModSettings.props" />
-  
-  <ItemGroup>
-    <Publicize Include="Timberborn.ConstructionGuidelines" />
-  </ItemGroup>
-  
+
 </Project>
+
