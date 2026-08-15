@@ -178,3 +178,29 @@ RequiresReload = false
 AvailableInMainMenu = true
 AvailableInGame = true
 AvailableInMapEditor = true
+
+
+Key = "MechanicalMarkerColorHex"
+Type = "string"
+DefaultValue = "#4D80CC80"
+Label = "Mechanical Connector Color"
+Tooltip = "Hex color code for the mechanical connector markers (#RRGGBBAA)."
+ControlType = "color"
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "MechanicalFloorColorHex"
+Type = "string"
+DefaultValue = "#974C4D77"
+Label = "Mechanical Floor Connector Color"
+Tooltip = "Hex color code for bottom-facing mechanical connector markers (#RRGGBBAA)."
+ControlType = "color"
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true

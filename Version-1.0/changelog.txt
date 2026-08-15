@@ -1,3 +1,12 @@
+* Game Version: 1.0.0.0 - Mod Version: 3.16.0
+- Ruler squares now rotate with the camera like the Topo numbers
+- Overlapping ruler squares show the shared number when rulers agree, otherwise the empty square
+- Mechanical connector colors are now configurable in settings
+* Game Version: 1.0.0.0 - Mod Version: 3.15.0
+- Add mechanical connectors markers to building previews
+- Make Ctrl-G toggle 3 state
+* Game Version: 1.0.0.0 - Mod Version: 3.14.0
+- Add mechanical connectors markers
 * Game Version: 1.0.0.0 - Mod Version: 3.13.0
 - Added circle ruler tool button to the toolbar
 - Added Clear Markers and Clear Rulers tools

@@ -1,0 +1,1 @@
+A high-performance standalone 2D grid overlay for map visualization.

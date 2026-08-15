@@ -3,7 +3,7 @@
     "Id": "Calloatti.Grid.KeyBind.Toggle.Topo",
     "GroupId": "Calloatti.Grid.KeyBindingGroup",
     "LocKey": "Calloatti.Grid.KeyBind.Toggle.Topo",
-    "Order": 0,
+    "Order": 30,
     "AllowOtherModifiers": false,
     "DevModeOnly": false
   },

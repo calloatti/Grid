@@ -1,0 +1,42 @@
+<p>Building perfect settlements has never been easier! This mod adds a clean, high-performance 3D grid overlay to Timberborn, helping you perfectly align buildings and paths with surgical precision, even in the most complex vertical colonies.</p>
+<h3 id="features">Features</h3>
+<p>Layer Sync: The grid is fully integrated with Timberborn's layer visibility system. It automatically renders on your active layer, allowing you to see exactly where you are building while slicing through the map levels.<br />
+Visual Reference: Helps visualize block dimensions and elevations, perfect for planning large-scale terraforming projects or long-distance path networks.<br />
+Total Optimization: Written to run natively within Timberborn's rendering engine, ensuring zero impact on your performance (FPS).<br />
+Rulers and Map Markers are saved with the saved game.<br />
+Grid reference lines<br />
+Mechanical connector markers: shows gears on mechanical input/output transputs. Bottom-facing connectors are always visible; others are hidden by terrain and buildings.<br />
+Also supports Rulers and Markers in Map Editor mode. They will not be loaded when a player with the mod creates a new game using the map, but consider deleting all rulers and markers from the map before publishing it.</p>
+<h3 id="controls">Controls</h3>
+<p>Shift-G turns Terrain Grid on/off<br />
+Alt-G turns Buildings Grid on/off<br />
+Ctrl-G turns Mechanical connector markers on/off. It cycles through three states: off, map + preview, preview only<br />
+Shift-U turns Rulers on/off<br />
+Shift-M turns Markers on/off<br />
+Shift-T turns the Topo Map on/off</p>
+<p>The button on the BottomBar with a grid opens the grid group menu.</p>
+<h3 id="rulers-and-circles">Rulers and circles</h3>
+<p>To add a ruler, select the ruler tool. click on the map, then move the mouse to set orientation. If you click on a rule tile, a rule with length tile cliked is created. Click outside the rule to create a max len rule.<br />
+Holding ALT while adding a ruler will add a circle with both horizontal and vertical diameter rulers.<br />
+After adding a ruler, you can shift click on it with the ruler tool to delete it.<br />
+Ctrl-Click on a ruler square turns the square red and adds more evenly spaced red squares on the ruler.<br />
+Ctrl-Click on a square next to a red square increases the gap size of red squares<br />
+Crtl-Click on a red square turns the ruler back into a normal ruler</p>
+<h3 id="map-markers">Map Markers</h3>
+<p>After adding a Map Marker, clicking one with the Map Marker tool cycles color.
+Shift-Click on a Marker deletes it.
+Markers are visible in all the layers.</p>
+<h3 id="topography-map">Topography Map</h3>
+<p>Displays the height of each block/column of terrain with a number. Still visible when changing active layer</p>
+<h3 id="irrigation-simulator">Irrigation Simulator</h3>
+<p>Allows to place virtual water to visualize the irrigation range.</p>
+<h3 id="construction-guidelines">Construction Guidelines</h3>
+<p>Adds numbers to the vanilla Construction Guidelines to make measuring distances when placing buildings easier.</p>
+<h3 id="settings">Settings:</h3>
+<p>Settings - Mod Settings (settings are saved in \PlayerData)</p>
+<hr />
+<p><a href="https://steamcommunity.com/sharedfiles/filedetails/?id=3682179025">Mods on Steam</a></p>
+<p><a href="https://mod.io/u/calloatti/?_sort=name">Mods on mod-dot-io</a></p>
+<p><a href="https://github.com/search?q=owner%3Acalloatti+sort%3Aname-asc+%22Timberborn+Mod%22&amp;type=repositories">Mods on Github</a></p>
+<p><a href="https://github.com/calloatti/ModZips">Mod zip files</a></p>
+

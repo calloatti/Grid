@@ -18,7 +18,7 @@ using UnityEngine.InputSystem;
 
 namespace Calloatti.Grid
 {
-  public class RulerService : ILoadableSingleton, IPostLoadableSingleton, ISaveableSingleton, System.IDisposable
+  public class RulerService : ILoadableSingleton, IPostLoadableSingleton, ILateUpdatableSingleton, ISaveableSingleton, System.IDisposable
   {
     public static RulerService Instance { get; private set; }
 
@@ -43,6 +43,7 @@ namespace Calloatti.Grid
     private const float HeightOffset = 0.05f;
     private const float SurfaceBaseHeight = 1.00f;
     private const float SliceBaseHeight = 0.85f;
+    private const float RotationDelay = 0.25f;
 
     // --- PERSISTENCE KEYS ---
     private static readonly SingletonKey RulersKey = new SingletonKey("Calloatti.Grid.Rulers");
@@ -68,6 +69,10 @@ namespace Calloatti.Grid
     private bool _isDrawing = false;
     private Vector3Int _startCoords;
     private int _drawingType = 0;
+
+    private Quaternion _lastRotation = Quaternion.identity;
+    private Quaternion _targetRotation = Quaternion.identity;
+    private float _rotationCooldown = 0f;
 
     public bool ForceCircle { get; set; }
 
@@ -128,6 +133,8 @@ namespace Calloatti.Grid
     {
       _eventBus.Register(this);
       _terrainService.TerrainHeightChanged += OnTerrainHeightChanged;
+      _lastRotation = CalculateCameraRotation();
+      _targetRotation = _lastRotation;
 
       Texture2D tex = _assetLoader.Load<Texture2D>("Sprites/grid-atlas");
       _rulerMaterial = new Material(Shader.Find("Sprites/Default")) { mainTexture = tex };
@@ -160,6 +167,31 @@ namespace Calloatti.Grid
           }
 
           InternalFinalizeRuler(_loadedStarts[i], _loadedEnds[i], _loadedRotations[i], vals, t, p, g);
+        }
+      }
+    }
+
+    public void LateUpdateSingleton()
+    {
+      if (!_rulersVisible) return;
+
+      Quaternion currentSnappedRot = CalculateCameraRotation();
+
+      if (currentSnappedRot != _lastRotation)
+      {
+        if (currentSnappedRot != _targetRotation)
+        {
+          _targetRotation = currentSnappedRot;
+          _rotationCooldown = RotationDelay;
+        }
+        else
+        {
+          _rotationCooldown -= Time.unscaledDeltaTime;
+          if (_rotationCooldown <= 0f)
+          {
+            RotateRulerQuads(_targetRotation);
+            _lastRotation = _targetRotation;
+          }
         }
       }
     }
@@ -645,13 +677,34 @@ namespace Calloatti.Grid
         if (!_sharedQuads.ContainsKey(tile))
         {
           GameObject shared = CreateRulerQuad(null, seg.Ruler.Rotation);
-          UpdateQuadHeight(shared, tile, _levelVisibilityService.MaxVisibleLevel, 0, 0);
           _sharedQuads[tile] = shared;
         }
+        UpdateSharedQuad(tile);
         _sharedQuads[tile].SetActive(_rulersVisible);
         seg.Obj.SetActive(false);
       }
-      else { seg.Obj.SetActive(false); }
+      else
+      {
+        UpdateSharedQuad(tile);
+        seg.Obj.SetActive(false);
+      }
+    }
+
+    private void UpdateSharedQuad(Vector2Int tile)
+    {
+      if (!_sharedQuads.ContainsKey(tile)) return;
+      UpdateQuadHeight(_sharedQuads[tile], tile, _levelVisibilityService.MaxVisibleLevel, 0, GetSharedValue(_segmentMap[tile]));
+    }
+
+    private static int GetSharedValue(List<RulerSegment> segs)
+    {
+      if (segs.Count == 0) return 0;
+      int value = segs[0].Value;
+      for (int i = 1; i < segs.Count; i++)
+      {
+        if (segs[i].Value != value) return 0;
+      }
+      return value;
     }
 
     private void CleanupOverlapForRuler(RulerInstance r)
@@ -667,11 +720,37 @@ namespace Calloatti.Grid
             if (_sharedQuads.ContainsKey(seg.Coords)) _sharedQuads[seg.Coords].SetActive(false);
             _segmentMap[seg.Coords][0].Obj.SetActive(_rulersVisible);
           }
-          else if (remaining <= 0)
+          else if (remaining >= 2)
+          {
+            UpdateSharedQuad(seg.Coords);
+          }
+          else
           {
             if (_sharedQuads.ContainsKey(seg.Coords)) _sharedQuads[seg.Coords].SetActive(false);
             _segmentMap.Remove(seg.Coords);
           }
+        }
+      }
+    }
+
+    private void RotateRulerQuads(Quaternion newRotation)
+    {
+      foreach (var r in _activeRulers)
+      {
+        foreach (var seg in r.Segments)
+        {
+          if (seg.Obj != null) seg.Obj.transform.rotation = newRotation;
+        }
+      }
+      foreach (var pair in _sharedQuads)
+      {
+        if (pair.Value != null) pair.Value.transform.rotation = newRotation;
+      }
+      if (_previewQuads != null)
+      {
+        for (int i = 0; i < _previewQuads.Length; i++)
+        {
+          if (_previewQuads[i] != null) _previewQuads[i].transform.rotation = newRotation;
         }
       }
     }
@@ -686,7 +765,8 @@ namespace Calloatti.Grid
 
     private Quaternion CalculateCameraRotation()
     {
-      float snapped = Mathf.Round(_cameraService.HorizontalAngle / 90f) * 90f;
+      float angle = Mathf.Repeat(_cameraService.HorizontalAngle, 360f);
+      float snapped = Mathf.Floor((angle + 22.5f) / 90f) * 90f;
       return Quaternion.Euler(90, snapped, 0);
     }
 

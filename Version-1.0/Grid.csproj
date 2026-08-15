@@ -3,10 +3,17 @@
   <PropertyGroup>
     <AssemblyName>grid</AssemblyName>
     <RootNamespace>Calloatti.Grid</RootNamespace>
-    <TimberbornPath>C:\Program Files (x86)\Steam\steamapps\common\timberborn_main\Timberborn_Data\Managed</TimberbornPath>
+    <TimberbornPath>C:\Program Files (x86)\Steam\steamapps\common\timberborn_public\Timberborn_Data\Managed</TimberbornPath>
   </PropertyGroup>
 
   <Import Project="CommonModSettings.props" />
 
+  <ItemGroup>
+    <Publicize Include="Timberborn.MechanicalSystem" />
+    <DoNotPublicize Include="Timberborn.MechanicalSystem:Timberborn.MechanicalSystem.TransputMap.TransputAdded" />
+    <DoNotPublicize Include="Timberborn.MechanicalSystem:Timberborn.MechanicalSystem.TransputMap.TransputRemoved" />
+  </ItemGroup>
+
 </Project>
+
 

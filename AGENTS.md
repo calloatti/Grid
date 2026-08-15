@@ -244,6 +244,7 @@ State holder for the cross pattern, stored in `_lastCrossParameters` on `Constru
 - References via `CommonModSettings.props` (game assemblies)
 - No test framework detected
 - Run by placing build output in Timberborn's mods folder
+- **NEVER deploy anything** and **NEVER check the deployed mods folder** (e.g. `Documents\Timberborn\Mods`). The project build handles deployment/copy automatically.
 
 ## Conventions
 - **Namespaces**: `Calloatti.Grid` (main), `Calloatti.Config` (simpleconfig)

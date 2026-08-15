@@ -3,7 +3,7 @@
     "Id": "Calloatti.Grid.KeyBind.Toggle.Rulers",
     "GroupId": "Calloatti.Grid.KeyBindingGroup",
     "LocKey": "Calloatti.Grid.KeyBind.Toggle.Rulers",
-    "Order": 0,
+    "Order": 50,
     "AllowOtherModifiers": false,
     "DevModeOnly": false
   },
