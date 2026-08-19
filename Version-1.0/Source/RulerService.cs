@@ -449,14 +449,18 @@ namespace Calloatti.Grid
       if (_previewContainer == null)
       {
         _previewContainer = new GameObject("RulerPreviewContainer");
-        _previewQuads = new GameObject[RULER_LENGTH];
-        for (int i = 0; i < RULER_LENGTH; i++)
+        _previewQuads = new GameObject[1600];
+        for (int i = 0; i < 1600; i++)
         {
           GameObject q = CreateRulerQuad(_previewContainer.transform, _lockedRotation);
           q.SetActive(false); _previewQuads[i] = q;
         }
       }
-      foreach (var q in _previewQuads) q.transform.rotation = _lockedRotation;
+      foreach (var q in _previewQuads)
+      {
+        q.transform.rotation = _lockedRotation;
+        q.SetActive(false);
+      }
       _previewContainer.SetActive(true);
     }
 
@@ -485,38 +489,46 @@ namespace Calloatti.Grid
       int idx = 0;
       int diameter = 2 * radius + 1;
 
-       foreach (var tile in GetCircleTiles(center, radius))
-       {
-         if (idx >= RULER_LENGTH) break;
-         if (!_terrainService.Contains(tile)) continue;
-         _previewQuads[idx].SetActive(true);
-         UpdateQuadHeight(_previewQuads[idx], tile, maxV, 0, CircleAtlasIndex);
-         idx++;
-       }
+int poolSize = _previewQuads.Length;
+        foreach (var tile in GetCircleTiles(center, radius))
+        {
+          if (idx >= poolSize) break;
+          if (!_terrainService.Contains(tile)) continue;
+          _previewQuads[idx].SetActive(true);
+          UpdateQuadHeight(_previewQuads[idx], tile, maxV, 0, CircleAtlasIndex);
+          idx++;
+        }
 
-       for (int i = 0; i < diameter && idx < RULER_LENGTH; i++)
-       {
-         Vector2Int tile = new Vector2Int(center.x - radius + i, center.y);
-         if (!_terrainService.Contains(tile)) continue;
-         _previewQuads[idx].SetActive(true);
-         UpdateQuadHeight(_previewQuads[idx], tile, maxV, 0, i + 1);
-         idx++;
-       }
+         for (int i = 0; i < diameter && idx < poolSize; i++)
+         {
+           Vector2Int tile = new Vector2Int(center.x - radius + i, center.y);
+           if (!_terrainService.Contains(tile)) continue;
+           _previewQuads[idx].SetActive(true);
+           int val;
+           if (i == radius) val = diameter;
+           else if (i < radius) val = radius - i;
+           else val = i - radius;
+           UpdateQuadHeight(_previewQuads[idx], tile, maxV, 0, val);
+           idx++;
+         }
 
-       for (int i = 0; i < diameter && idx < RULER_LENGTH; i++)
-       {
-         Vector2Int tile = new Vector2Int(center.x, center.y - radius + i);
-         if (tile.y == center.y) continue;
-         if (!_terrainService.Contains(tile)) continue;
-         _previewQuads[idx].SetActive(true);
-         UpdateQuadHeight(_previewQuads[idx], tile, maxV, 0, i + 1);
-         idx++;
-       }
+         for (int i = 0; i < diameter && idx < poolSize; i++)
+         {
+           Vector2Int tile = new Vector2Int(center.x, center.y - radius + i);
+           if (i == radius) continue;
+           if (!_terrainService.Contains(tile)) continue;
+           _previewQuads[idx].SetActive(true);
+           int val;
+           if (i < radius) val = radius - i;
+           else val = i - radius;
+           UpdateQuadHeight(_previewQuads[idx], tile, maxV, 0, val);
+           idx++;
+         }
 
-       for (int i = idx; i < RULER_LENGTH; i++)
-       {
-         _previewQuads[i].SetActive(false);
-       }
+        for (int i = idx; i < poolSize; i++)
+        {
+          _previewQuads[i].SetActive(false);
+        }
     }
 
     private void InternalFinalizeRuler(Vector3Int start, Vector3Int end, Quaternion rotation, List<int> explicitValues, int rType, int rPeriod, int rGap)
@@ -578,28 +590,35 @@ namespace Calloatti.Grid
          RegisterOverlap(tile, seg);
        }
 
-       for (int i = 0; i < diameter; i++)
-       {
-         Vector2Int tile = new Vector2Int(center.x - radius + i, center.y);
-         if (!_terrainService.Contains(tile)) continue;
-         GameObject quad = CreateRulerQuad(container.transform, rotation);
-         var seg = new RulerSegment { Obj = quad, Coords = tile, Value = i + 1, Ruler = instance };
-         UpdateQuadHeight(quad, tile, maxV, instance.RulerType, i + 1);
-         instance.Segments.Add(seg);
-         RegisterOverlap(tile, seg);
-       }
+        for (int i = 0; i < diameter; i++)
+        {
+          Vector2Int tile = new Vector2Int(center.x - radius + i, center.y);
+          if (!_terrainService.Contains(tile)) continue;
+          GameObject quad = CreateRulerQuad(container.transform, rotation);
+          int val;
+          if (i == radius) val = diameter;
+          else if (i < radius) val = radius - i;
+          else val = i - radius;
+          var seg = new RulerSegment { Obj = quad, Coords = tile, Value = val, Ruler = instance };
+          UpdateQuadHeight(quad, tile, maxV, instance.RulerType, val);
+          instance.Segments.Add(seg);
+          RegisterOverlap(tile, seg);
+        }
 
-       for (int i = 0; i < diameter; i++)
-       {
-         Vector2Int tile = new Vector2Int(center.x, center.y - radius + i);
-         if (tile.y == center.y) continue;
-         if (!_terrainService.Contains(tile)) continue;
-         GameObject quad = CreateRulerQuad(container.transform, rotation);
-         var seg = new RulerSegment { Obj = quad, Coords = tile, Value = i + 1, Ruler = instance };
-         UpdateQuadHeight(quad, tile, maxV, instance.RulerType, i + 1);
-         instance.Segments.Add(seg);
-         RegisterOverlap(tile, seg);
-       }
+        for (int i = 0; i < diameter; i++)
+        {
+          Vector2Int tile = new Vector2Int(center.x, center.y - radius + i);
+          if (i == radius) continue;
+          if (!_terrainService.Contains(tile)) continue;
+          GameObject quad = CreateRulerQuad(container.transform, rotation);
+          int val;
+          if (i < radius) val = radius - i;
+          else val = i - radius;
+          var seg = new RulerSegment { Obj = quad, Coords = tile, Value = val, Ruler = instance };
+          UpdateQuadHeight(quad, tile, maxV, instance.RulerType, val);
+          instance.Segments.Add(seg);
+          RegisterOverlap(tile, seg);
+        }
 
       _activeRulers.Add(instance);
     }

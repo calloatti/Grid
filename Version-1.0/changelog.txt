@@ -1,3 +1,9 @@
+* Game Version: 1.0.0.0 - Mod Version: 3.17.0
+- Evaporation rate overlay: displays per-water-column evaporation rates (m³/day) at column tops
+* Game Version: 1.0.0.0 - Mod Version: 3.16.1
+- Diameter lines now show diameter value in the center tile, with numbers counting outward from center
+- Increased preview quad pool from 255 to 1600 to support large circles
+- Fixed preview state bleed when switching between circle and straight ruler previews
 * Game Version: 1.0.0.0 - Mod Version: 3.16.0
 - Ruler squares now rotate with the camera like the Topo numbers
 - Overlapping ruler squares show the shared number when rulers agree, otherwise the empty square

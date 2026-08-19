@@ -18,6 +18,8 @@ A Timberborn mod that adds grid overlays, water planning tools, markers, and rul
 | `Source/TopoService.cs` | Height-map visualization using sprite atlas + chunked meshes |
 | `Source/WaterModule.cs` | Water planner configurator & events |
 | `Source/WaterService.cs` | Water planned areas, moisture spread simulation (BFS), visualizers |
+| `Source/EvapModule.cs` | Evaporation overlay configurator & input service |
+| `Source/EvapService.cs` | Evaporation rate overlay — chunked rendering, hash dirty tracking, AssetBundle shader |
 | `Source/MarkerModule.cs` | Marker configurator, input service, settings (binds `MarkerTool`, `MarkerToolClear`, `MarkerToolDeleteAll`) |
 | `Source/MarkerService.cs` | Colored cross markers on columns, save/load persistence, `DeleteMarker(Vector3Int)` |
 | `Source/RulerModule.cs` | Ruler configurator & input service (binds `RulerTool`, `RulerCircleTool`, `RulerToolClear`, `RulerToolDeleteAll`) |
@@ -226,6 +228,63 @@ State holder for the cross pattern, stored in `_lastCrossParameters` on `Constru
 - `Reset()` — blanks to `-1,-1,-1` when guidelines are hidden; we postfix this to clear dot positions
 - For distance numbering: use `Min`/`Max` to measure distance from footprint **edge**, not from center
 
+## Evaporation (Game Data Model)
+
+### Data Sources (all public, bound in Game + MapEditor contexts)
+- `IThreadSafeWaterMap` (Timberborn.WaterSystem.cs) — water columns: `ColumnCounts[index2D]`, `ColumnCount(int index2D)`, `ColumnFloor(int index3D)`, `ColumnCeiling(int index3D)`, `WaterDepth(int index3D)`, `WaterColumns` (`ReadOnlyArray<ReadOnlyWaterColumn>`, each with `Floor`/`Ceiling`/`WaterDepth`)
+- `IThreadSafeWaterEvaporationMap` (Timberborn.WaterSystem.cs) — `EvaporationModifiers` (`ReadOnlyArray<float>`) per water column
+- Both are read from `index3D = index2D + j * VerticalStride` where `index2D = MapIndexService.CoordinatesToIndex((x, y))` and `j` = water-column index
+- No publicization needed; `Timberborn.WaterSystem` and the two interfaces are public
+- `WaterSimulatorSpec`, `SoilMoistureSimulatorSpec`, `ITickService`, `DayNightCycleSpec` are internal — do NOT rely on them; hardcode sim constants
+
+### Water Column Model (critical)
+- A **water column** is a continuous stack of water cells spanning `[Floor, Ceiling)` — one `WaterColumn` entry per stack, NOT one per z-level
+- `WaterDepth` is the fill depth within that span (max = `Ceiling - Floor`); the whole stack is one column
+- `ColumnCounts[index2D]` counts **columns per tile** (default 1, even dry tiles — an empty column with `WaterDepth == 0`). Obstacles split/merge columns (`SplitColumn`/`MergeColumns`/`InsertColumn`), so one tile can have multiple columns (e.g. ground water + a gapped elevated aqueduct)
+- **Only the top cell of each column evaporates** (evaporation is applied once per column, reducing the column's `WaterDepth`). Water cells under other water cells do NOT evaporate
+- Column top block surface = `Ceiling` (top cell z is `Ceiling - 1`)
+- The evaporation modifier array is indexed per column: `EvaporationModifiers[index2D + j * VerticalStride]`
+
+### Evaporation Computation
+- Per column per sim step: `evaporation = evapSpeed × modifier × deltaTime`, subtracted from `WaterDepth` (`WaterParametersUpdateTask.ProcessWaterDepthChanges`)
+- `evapSpeed` = `0.001` (fast) if `WaterDepth < 0.02` else `0.0001` (normal) — **per mod decision, always use the normal `0.0001` rate** (ignore the depth threshold)
+- `modifier` comes from soil-moisture cluster saturation at that column
+- **Modifier vs saturation (vanilla `SoilMoistureSimulator` spec, `QuadraticEvaporationCoefficient=0.0595`, `LinearQuadraticCoefficient=0.101`, `ConstantQuadraticCoefficient=0.72`):**
+
+| saturation | watered neighbors | evap modifier |
+|---|---|---|
+| 0 (dry) | none | 1.0 (unreachable — no water column to evaporate) |
+| 1 | ~1 | 6.45 |
+| 2 | ~2 | 5.34 |
+| 3 | ~3 | 4.34 |
+| 4 | ~4 | 3.47 |
+| 5 | ~5 | 2.71 |
+| 6 | ~6 | 2.08 |
+| 7 | ~7 | 1.56 |
+| 8 (fully watered) | 8 | 1.16 |
+
+- Direction is counterintuitive: modifier **decreases as moisture increases** — peak (6.45×) at saturation 1 (fresh/thin irrigation), near baseline (1.16×) when fully saturated. Dry soil has no water → no evaporation
+- `wateredNeighbours[cell] = neighbor count + 1` for any water cell, so water columns always have saturation ≥ 1 → **reachable modifier range for evaporating columns is 1.16–6.45**
+
+### Value Range (per column, m³/day)
+- Per-day factor = `TickIntervalInSeconds(0.6) × DayLengthInTicks(768) = 460.8` (hardcoded)
+- `m³/day = 0.0001 × modifier × 460.8`
+- Realistic per-column range: **0.05–0.30 m³/day** (0.05 at saturated center, 0.30 at thin edge) → displayed 2 decimals (0.05–0.30)
+- One cell (1×1 m) at 1 unit depth = 1 m³, so depth rate = m³/day per cell directly
+
+### Evaporation Map (implemented — `Source/EvapModule.cs` + `Source/EvapService.cs`, mirrors TopoService)
+- Per tile, iterate columns `j in 0..ColumnCounts[index2D]-1`; skip if `WaterDepth == 0`
+- Display one number per water column at its top block surface: world y = `Ceiling + 0.05f`
+- Multiple columns in one tile → one number each, at their own tops (stacked for continuous towers, separate for gapped stacks)
+- Display value = `0.0001 × modifier × 460.8` m³/day, **2 decimals**, mapped to atlas row 3 (`EvapDataRow = 3`): `spriteIndex = Clamp(Round(evap × 100), 0, 255)` — atlas cells pre-baked `0.00`…`2.55` in magenta-purple `235,90,255`. NOT the topo/CG digit cells (those stay white).
+- `index2D = MapIndexService.CoordinatesToIndex3D(new Vector3Int(x, y, 0))`; `index3D = index2D + j * MapIndexService.VerticalStride`
+- **Chunked rendering (32×32 chunks):** subscribes `ITickableSingletonService.ForcedParallelTickFinished` (public, bound in Game+MapEditor) and refreshes ONE chunk per game tick; whole map cycles every `ceil(Size.x/32)×ceil(Size.y/32)` ticks. **Chunk-level hash dirty tracking** (rolling hash of water depth + modifier per column) — only rebuilds changed chunks.
+- **Camera rotation:** handled by chunk-level mesh rotation (in-place vertex rotation with delta quaternion) — no full rebuild on camera rotate.
+- **AssetBundle** with custom URP shader (`Shaders/EvapAtlas`) and material (`Materials/EvapAtlasMaterial`) deployed via `Resources/` folder; loads via `_assetLoader.Load<Material>("Materials/EvapAtlasMaterial")`.
+- Hotkey: Shift+V (`Calloatti.Grid.KeyBind.Toggle.Evap`, order 35); notifications `Calloatti.Grid.EvapData.NotificationOn/Off`
+- Slice visibility like topo (number visible when slice is at/below the column top); camera-rotation snap like topo
+- **Version compatibility:** all APIs used (public `IThreadSafeWaterMap` subset, `IThreadSafeWaterEvaporationMap`, `ITickableSingletonService`, `ITickService`, `MapIndexService.VerticalStride`/`CoordinatesToIndex3D`) are identical in 1.0.13.1 and 1.1.2.1 — single `Version-1.0` implementation serves both, no `Version-1.1` folder needed. Water evaporates from the top cell of each column only.
+
 ## Key Game API Namespaces
 - `Timberborn.BlockSystem` — `BlockObject`, `IBlockService`, `BlockOccupations`, events
 - `Timberborn.Buildings` — `Building` component
@@ -301,3 +360,8 @@ float outerRSq = (radius + 0.5f) * (radius + 0.5f);
 Reference SVG files from donatstudios.com are in `.scratch/` (e.g., `Circle-7x7-download.svg`).
 SVG parsing: use independent regex for each attribute (`data-x`, `data-y`, `fill`) rather than assuming attribute order.
 Convert absolute SVG coordinates to relative by subtracting the center offset `(radius, radius)`.
+
+## Hard Rule
+DO NOT EVER TOUCH THE DEPLOY FOLDER.
+
+BUILD DOES EVERYTHING, NEVER EVER MESS WITH THE DEPLOY PROCESS.

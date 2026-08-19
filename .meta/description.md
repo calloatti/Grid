@@ -16,6 +16,7 @@ Ctrl-G turns Mechanical connector markers on/off. It cycles through three states
 Shift-U turns Rulers on/off  
 Shift-M turns Markers on/off  
 Shift-T turns the Topo Map on/off
+Shift-V turns the Evaporation Map on/off
 
 The button on the BottomBar with a grid opens the grid group menu.
 
@@ -34,6 +35,9 @@ Markers are visible in all the layers.
 
 ### Topography Map
 Displays the height of each block/column of terrain with a number. Still visible when changing active layer
+
+### Evaporation Map
+Evaporation rate overlay: displays per-water-column evaporation rates (m³/day).
 
 ### Irrigation Simulator
 Allows to place virtual water to visualize the irrigation range.

@@ -15,7 +15,7 @@ Alt-G turns Buildings Grid on/off
 Ctrl-G turns Mechanical connector markers on/off. It cycles through three states: off, map + preview, preview only
 Shift-U turns Rulers on/off
 Shift-M turns Markers on/off
-Shift-T turns the Topo Map on/off
+Shift-T turns the Topo Map on/off Shift-V turns the Evaporation Map on/off
 
 The button on the BottomBar with a grid opens the grid group menu.
 
@@ -32,6 +32,9 @@ After adding a Map Marker, clicking one with the Map Marker tool cycles color. S
 
 [h3]Topography Map[/h3]
 Displays the height of each block/column of terrain with a number. Still visible when changing active layer
+
+[h3]Evaporation Map[/h3]
+Evaporation rate overlay: displays per-water-column evaporation rates (m³/day).
 
 [h3]Irrigation Simulator[/h3]
 Allows to place virtual water to visualize the irrigation range.
