@@ -9,7 +9,6 @@
   <Import Project="CommonModSettings.props" />
 
   <ItemGroup>
-    <Publicize Include="Timberborn.MechanicalSystem" />
     <DoNotPublicize Include="Timberborn.MechanicalSystem:Timberborn.MechanicalSystem.TransputMap.TransputAdded" />
     <DoNotPublicize Include="Timberborn.MechanicalSystem:Timberborn.MechanicalSystem.TransputMap.TransputRemoved" />
   </ItemGroup>
