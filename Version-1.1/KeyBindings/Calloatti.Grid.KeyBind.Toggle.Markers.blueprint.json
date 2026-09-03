@@ -1,0 +1,11 @@
+﻿{
+  "KeyBindingSpec": {
+    "Id": "Calloatti.Grid.KeyBind.Toggle.Markers",
+    "GroupId": "Calloatti.Grid.KeyBindingGroup",
+    "LocKey": "Calloatti.Grid.KeyBind.Toggle.Markers",
+    "Order": 40,
+    "AllowOtherModifiers": false,
+    "DevModeOnly": false
+  },
+  "PrimaryInputBindingSpec": {"Path": "/Keyboard/m", "InputModifiers": "Shift", "Unchangeable": false}
+}

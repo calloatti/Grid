@@ -1,0 +1,24 @@
+ManifestFileVersion: 0
+UnityVersion: 6000.3.6f1
+CRC: 476228867
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 6d8a403b6aa5062374b7c6d936ce7c05
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 74616c350bac436be9c6560c196b91ae
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: c77cbfdbf4874067ce5afb632814e4b8
+HashAppended: 0
+ClassTypes:
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/Mods/Grid/AssetBundles/Resources/Materials/EvapAtlasMaterial.mat
+- Assets/Mods/Grid/AssetBundles/Resources/Shaders/EvapAtlas.shader
+Dependencies: []

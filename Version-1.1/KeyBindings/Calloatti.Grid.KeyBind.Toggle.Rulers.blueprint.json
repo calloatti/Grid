@@ -1,0 +1,11 @@
+﻿{
+  "KeyBindingSpec": {
+    "Id": "Calloatti.Grid.KeyBind.Toggle.Rulers",
+    "GroupId": "Calloatti.Grid.KeyBindingGroup",
+    "LocKey": "Calloatti.Grid.KeyBind.Toggle.Rulers",
+    "Order": 50,
+    "AllowOtherModifiers": false,
+    "DevModeOnly": false
+  },
+  "PrimaryInputBindingSpec": {"Path": "/Keyboard/u", "InputModifiers": "Shift", "Unchangeable": false}
+}

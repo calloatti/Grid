@@ -1,0 +1,7 @@
+﻿{
+  "ToolGroupSpec": {
+    "Id": "Calloatti.GridToolGroup",
+    "DisplayNameLocKey": "Calloatti.Grid.ToolGroup.Name",
+    "Icon": "Sprites/BottomBar/grid-bold"
+  }
+}

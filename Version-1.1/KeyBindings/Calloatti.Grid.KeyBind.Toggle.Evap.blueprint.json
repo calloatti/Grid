@@ -1,0 +1,11 @@
+{
+  "KeyBindingSpec": {
+    "Id": "Calloatti.Grid.KeyBind.Toggle.Evap",
+    "GroupId": "Calloatti.Grid.KeyBindingGroup",
+    "LocKey": "Calloatti.Grid.KeyBind.Toggle.Evap",
+    "Order": 35,
+    "AllowOtherModifiers": false,
+    "DevModeOnly": false
+  },
+  "PrimaryInputBindingSpec": {"Path": "/Keyboard/v", "InputModifiers": "Shift", "Unchangeable": false}
+}

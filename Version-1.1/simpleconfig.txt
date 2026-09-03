@@ -1,0 +1,206 @@
+ConfigFileName = "Grid.txt"
+
+Key = "GridNormalVerticalOffset"
+Type = "float"
+DefaultValue = 0.0
+Label = "Normal Vertical Offset"
+Tooltip = "Vertical offset for the regular terrain grid."
+ControlType = "Slider"
+MinValue = -2.0
+MaxValue = 2.0
+Step = 0.01
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridSlicedVerticalOffset"
+Type = "float"
+DefaultValue = 0.0
+Label = "Sliced Vertical Offset"
+Tooltip = "Vertical offset for the grid when terrain is sliced."
+ControlType = "Slider"
+MinValue = -2.0
+MaxValue = 2.0
+Step = 0.01
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridHorizontalOffsetEW"
+Type = "float"
+DefaultValue = 0.0
+Label = "Horizontal Offset (East/West)"
+Tooltip = "Horizontal position shift on the X axis."
+ControlType = "Slider"
+MinValue = -1.0
+MaxValue = 1.0
+Step = 0.01
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridHorizontalOffsetNS"
+Type = "float"
+DefaultValue = 0.0
+Label = "Horizontal Offset (North/South)"
+Tooltip = "Horizontal position shift on the Y axis."
+ControlType = "Slider"
+MinValue = -1.0
+MaxValue = 1.0
+Step = 0.01
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridTerrainColorHex"
+Type = "string"
+DefaultValue = "#00000066"
+Label = "Terrain Grid Color"
+Tooltip = "Hex color code for the terrain grid (#RRGGBBAA)."
+ControlType = "TextField"
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridBuildingColorHex"
+Type = "string"
+DefaultValue = "#00F2F266"
+Label = "Building Grid Color"
+Tooltip = "Hex color code for the building grid (#RRGGBBAA)."
+ControlType = "color"
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridHighlightEnabled"
+Type = "bool"
+DefaultValue = false
+Label = "Enable Grid Highlight"
+Tooltip = "Draws distinct colored lines at set intervals for easier city planning."
+ControlType = "Toggle"
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridHighlightColorHex"
+Type = "string"
+DefaultValue = "#FF000066"
+Label = "Highlight Grid Color"
+Tooltip = "Hex color code for the highlighted grid lines (#RRGGBBAA)."
+ControlType = "color"
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridHighlightIntervalX"
+Type = "int"
+DefaultValue = 10
+Label = "Highlight Interval (X-Axis)"
+Tooltip = "Draws a highlighted line or pair every N blocks horizontally."
+ControlType = "Slider"
+MinValue = 0
+MaxValue = 128
+Step = 1
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridHighlightIntervalY"
+Type = "int"
+DefaultValue = 10
+Label = "Highlight Interval (Y-Axis)"
+Tooltip = "Draws a highlighted line or pair every N blocks vertically."
+ControlType = "Slider"
+MinValue = 0
+MaxValue = 128
+Step = 1
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridHighlightWidthX"
+Type = "int"
+DefaultValue = 0
+Label = "Highlight Width (X-Axis)"
+Tooltip = "Sets the distance in blocks between the paired highlight lines horizontally."
+ControlType = "Slider"
+MinValue = 0
+MaxValue = 64
+Step = 1
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "GridHighlightWidthY"
+Type = "int"
+DefaultValue = 0
+Label = "Highlight Width (Y-Axis)"
+Tooltip = "Sets the distance in blocks between the paired highlight lines vertically."
+ControlType = "Slider"
+MinValue = 0
+MaxValue = 64
+Step = 1
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "MechanicalMarkerColorHex"
+Type = "string"
+DefaultValue = "#4D80CC80"
+Label = "Mechanical Connector Color"
+Tooltip = "Hex color code for the mechanical connector markers (#RRGGBBAA)."
+ControlType = "color"
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true
+
+
+Key = "MechanicalFloorColorHex"
+Type = "string"
+DefaultValue = "#974C4D77"
+Label = "Mechanical Floor Connector Color"
+Tooltip = "Hex color code for bottom-facing mechanical connector markers (#RRGGBBAA)."
+ControlType = "color"
+RequiresRestart = false
+RequiresReload = false
+AvailableInMainMenu = true
+AvailableInGame = true
+AvailableInMapEditor = true

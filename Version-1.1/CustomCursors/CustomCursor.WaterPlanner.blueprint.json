@@ -1,0 +1,10 @@
+﻿{
+  "CustomCursorSpec": {
+    "Id": "WaterPlannerCursor",
+    "WindowsCursor": "Resources/ui/cursors/water-cursor",
+    "MacOsCursor": "Resources/ui/cursors/water-cursor",
+    "Hotspot": {"X": 32, "Y": 64},
+    "WindowsCursorOffset": {"X": 10, "Y": 30},
+    "MacOsCursorOffset": {"X": 15, "Y": 45}
+  }
+}
